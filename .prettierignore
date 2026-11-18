@@ -1,0 +1,10 @@
+node_modules
+dist
+src-tauri
+public
+bun.lock
+package-lock.json
+src/components/ui/*
+src/hooks/use-composer-editor.ts
+src/hooks/use-media-query.ts
+src/lib/composer-*.ts

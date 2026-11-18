@@ -1,0 +1,31 @@
+
+[
+  {
+    "code": "-1",
+    "description": "Todos los periodos"
+  },
+  {
+    "code": "202620",
+    "description": "Semestre Pregrado 2026 - 2"
+  },
+  {
+    "code": "202610",
+    "description": "Semestre Pregrado 2026 - 1"
+  },
+  {
+    "code": "202520",
+    "description": "Semestre Pregrado 2025 - 2"
+  },
+  {
+    "code": "202510",
+    "description": "Semestre Pregrado 2025 - 1"
+  },
+  {
+    "code": "202420",
+    "description": "Semestre Pregrado 2024 - 2"
+  },
+  {
+    "code": "202410",
+    "description": "Semestre Pregrado 2024 - 1"
+  }
+]

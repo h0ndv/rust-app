@@ -1,0 +1,38 @@
+{
+  "selectedTerm": {
+    "hoursAttempted": null,
+    "hoursEarned": null,
+    "gpaHours": null,
+    "qualityPoints": null,
+    "gpa": null
+  },
+  "cumulative": {
+    "hoursAttempted": null,
+    "hoursEarned": null,
+    "gpaHours": null,
+    "qualityPoints": null,
+    "gpa": null
+  },
+  "transfer": {
+    "hoursAttempted": null,
+    "hoursEarned": null,
+    "gpaHours": null,
+    "qualityPoints": null,
+    "gpa": null
+  },
+  "overall": {
+    "hoursAttempted": null,
+    "hoursEarned": null,
+    "gpaHours": null,
+    "qualityPoints": null,
+    "gpa": null
+  },
+  "firstTerm": 
+  [
+    "202410"
+  ],
+  "lastTerm": 
+  [
+    "202620"
+  ]
+}
