@@ -68,7 +68,6 @@ pub fn parse_courses_response(raw: &str) -> Result<Vec<BannerGrade>, AppError> {
     Ok(out)
 }
 
-/// Terms, levels and plans share the same shape: `[{ code, description }]`.
 pub fn parse_options_response(raw: &str) -> Result<Vec<BannerOption>, AppError> {
     let payload = parse_json(raw)?;
     let rows = payload

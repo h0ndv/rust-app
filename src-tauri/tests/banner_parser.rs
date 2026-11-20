@@ -4,7 +4,7 @@ use rust_app_lib::banner::parser::{
 use rust_app_lib::error::AppError;
 
 #[test]
-fn parsea_notas_del_periodo() {
+fn parses_term_grades() {
     let json = include_str!("fixtures/banner/courses.json");
     let grades = parse_courses_response(json).unwrap();
 
@@ -19,14 +19,14 @@ fn parsea_notas_del_periodo() {
         grades
             .iter()
             .any(|g| g.subject == "IGR" && g.number == "00167"),
-        "Minería de Datos aparece en cátedra y laboratorio"
+        "Minería de Datos appears in lecture and lab"
     );
     // Today no grade is published: all fields arrive null.
     assert!(grades.iter().all(|g| g.final_grade.is_none()));
 }
 
 #[test]
-fn lee_una_nota_publicada_y_otra_pendiente() {
+fn reads_published_and_pending_grade() {
     let json = r#"{"success":true,"data":[
         {"subjectCode":"IGR","courseNumber":"00167","courseReferenceNumber":"30061",
          "section":"00G","courseTitle":"Minería De Datos","finalGrade":"6,5",
@@ -45,7 +45,7 @@ fn lee_una_nota_publicada_y_otra_pendiente() {
 }
 
 #[test]
-fn html_de_sso_es_unauthorized() {
+fn sso_html_is_unauthorized() {
     let html = "<!DOCTYPE html><html><head><title>Redirecting</title><meta name=\"PageID\" content=\"BssoInterrupt\"></head></html>";
     assert!(matches!(
         parse_courses_response(html),
@@ -54,7 +54,7 @@ fn html_de_sso_es_unauthorized() {
 }
 
 #[test]
-fn una_respuesta_sin_datos_es_error_de_parseo() {
+fn response_without_data_is_parse_error() {
     assert!(matches!(
         parse_courses_response(r#"{"success":false,"message":"sesión"}"#),
         Err(AppError::Parse(_))
@@ -62,7 +62,7 @@ fn una_respuesta_sin_datos_es_error_de_parseo() {
 }
 
 #[test]
-fn parsea_los_periodos() {
+fn parses_periods() {
     let json = include_str!("fixtures/banner/terms.json");
     let terms = parse_options_response(json).unwrap();
 
@@ -73,7 +73,7 @@ fn parsea_los_periodos() {
 }
 
 #[test]
-fn parsea_niveles_y_planes() {
+fn parses_levels_and_study_paths() {
     let levels = parse_options_response(include_str!("fixtures/banner/level.json")).unwrap();
     assert_eq!(levels[0].code, "02");
     assert_eq!(levels[0].description, "Profesional");
@@ -83,7 +83,7 @@ fn parsea_niveles_y_planes() {
 }
 
 #[test]
-fn parsea_el_gpa_del_periodo() {
+fn parses_term_gpa() {
     let json = include_str!("fixtures/banner/gpa.json");
     let gpa = parse_gpa_response(json).unwrap();
 
@@ -93,7 +93,7 @@ fn parsea_el_gpa_del_periodo() {
 }
 
 #[test]
-fn lee_un_gpa_numerico() {
+fn reads_numeric_gpa() {
     let json = r#"{"selectedTerm":{"gpa":5.42},"cumulative":{"gpa":5.11}}"#;
     let gpa = parse_gpa_response(json).unwrap();
     assert_eq!(gpa.selected_term, Some(5.42));

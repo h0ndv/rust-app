@@ -1,7 +1,7 @@
 use rust_app_lib::commands::dto::{DashboardDto, GradesDto, ResourceFilter, TaskFilter};
 
 #[test]
-fn dashboard_serializa_campos_esperados() {
+fn dashboard_serializes_expected_fields() {
     let dto = DashboardDto::empty();
     let json = serde_json::to_value(&dto).unwrap();
 
@@ -12,7 +12,7 @@ fn dashboard_serializa_campos_esperados() {
 }
 
 #[test]
-fn los_filtros_llegan_en_minusculas() {
+fn filters_arrive_lowercase() {
     let task: TaskFilter = serde_json::from_str("\"overdue\"").unwrap();
     assert_eq!(task, TaskFilter::Overdue);
 
@@ -21,7 +21,7 @@ fn los_filtros_llegan_en_minusculas() {
 }
 
 #[test]
-fn las_notas_separan_banner_de_moodle() {
+fn grades_separate_banner_from_moodle() {
     let dto = GradesDto::default();
     let json = serde_json::to_value(&dto).unwrap();
 
@@ -32,7 +32,7 @@ fn las_notas_separan_banner_de_moodle() {
 }
 
 #[test]
-fn los_ajustes_tienen_valores_por_defecto() {
+fn settings_have_default_values() {
     let dto = rust_app_lib::commands::dto::SettingsDto::default();
     assert_eq!(dto.sync_interval_minutes, 30);
     assert_eq!(dto.theme, "system");

@@ -4,7 +4,6 @@ use tauri::State;
 
 use crate::auth::{SessionManager, SessionState, Source};
 
-/// With no source it connects all three; with a source, only that one.
 #[tauri::command]
 pub async fn connect(
     session: State<'_, Arc<SessionManager>>,

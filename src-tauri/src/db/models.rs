@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Group of subjects by code, for example `IGR-00167`.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct CourseGroup {
     pub id: String,
@@ -8,7 +7,6 @@ pub struct CourseGroup {
     pub name: String,
 }
 
-/// A real section of a subject: lecture and lab are separate rows.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Course {
     pub id: String,

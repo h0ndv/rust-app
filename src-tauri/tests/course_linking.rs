@@ -35,7 +35,7 @@ fn banner_grade(subject: &str, number: &str, section: &str, crn: &str) -> Banner
 }
 
 #[test]
-fn une_por_codigo_y_seccion() {
+fn links_by_code_and_section() {
     let moodle = vec![moodle_course(
         "30061.202620",
         "Minería de Datos (IGR-00167-00G)",
@@ -50,7 +50,7 @@ fn une_por_codigo_y_seccion() {
 }
 
 #[test]
-fn un_curso_sin_pareja_sigue_apareciendo() {
+fn course_without_pair_still_appears() {
     let moodle = vec![moodle_course(
         "99999.202620",
         "Ramo Sin Banner (XXX-00000-00G)",
@@ -63,7 +63,7 @@ fn un_curso_sin_pareja_sigue_apareciendo() {
 }
 
 #[test]
-fn un_curso_solo_en_banner_tambien_aparece() {
+fn banner_only_course_also_appears() {
     let banner = vec![banner_grade("XXX", "00000", "00G", "12345")];
     let links = link_courses(&[], &banner);
 
@@ -73,9 +73,7 @@ fn un_curso_solo_en_banner_tambien_aparece() {
 }
 
 #[test]
-fn el_shortname_gana_sobre_el_codigo_del_nombre() {
-    // The name keeps an old section, but the shortname and the CRN
-    // match: the union must use the shortname.
+fn shortname_wins_over_name_code() {
     let moodle = vec![moodle_course(
         "30061.202620",
         "Minería de Datos (IGR-00167-XXY)",
@@ -87,7 +85,7 @@ fn el_shortname_gana_sobre_el_codigo_del_nombre() {
 }
 
 #[test]
-fn un_curso_de_otro_semestre_no_se_une() {
+fn course_from_another_term_is_not_linked() {
     let moodle = vec![moodle_course(
         "30061.202520",
         "Minería de Datos (IGR-00167-00G)",
@@ -99,7 +97,7 @@ fn un_curso_de_otro_semestre_no_se_une() {
 }
 
 #[test]
-fn los_fixtures_reales_se_unan_completos() {
+fn real_fixtures_link_completely() {
     let moodle = parse_courses_json(include_str!("fixtures/moodle/courses.json")).unwrap();
     let banner = rust_app_lib::banner::parser::parse_courses_response(include_str!(
         "fixtures/banner/courses.json"
@@ -113,11 +111,11 @@ fn los_fixtures_reales_se_unan_completos() {
     assert_eq!(links.len(), 8);
     assert!(
         links.iter().all(|link| link.banner_crn.is_some()),
-        "los ocho ramos de Moodle tienen pareja en Banner"
+        "the eight Moodle courses have a Banner pair"
     );
     assert!(
         links.iter().all(|link| link.moodle_course_id.is_some()),
-        "y ninguno queda suelto"
+        "and none is left unmatched"
     );
 }
 
@@ -145,7 +143,7 @@ async fn catalog() -> rust_app_lib::db::repo::Repo {
 }
 
 #[tokio::test]
-async fn el_grupo_agrupa_las_dos_secciones_y_muestra_el_vencimiento() {
+async fn group_joins_both_sections_and_shows_due_date() {
     use rust_app_lib::db::linking::course_groups;
 
     let repo = catalog().await;
@@ -177,7 +175,7 @@ async fn el_grupo_agrupa_las_dos_secciones_y_muestra_el_vencimiento() {
         .find(|group| group.code == "IGR-00167")
         .unwrap();
     assert_eq!(mining.name, "Minería de Datos");
-    assert_eq!(mining.sections.len(), 2, "cátedra y laboratorio");
+    assert_eq!(mining.sections.len(), 2, "lecture and lab");
 
     let lab = mining
         .sections
@@ -191,7 +189,7 @@ async fn el_grupo_agrupa_las_dos_secciones_y_muestra_el_vencimiento() {
 }
 
 #[tokio::test]
-async fn el_detalle_del_ramo_trae_tareas_horario_y_recursos() {
+async fn course_detail_brings_tasks_schedule_and_resources() {
     let repo = catalog().await;
     let now = chrono::Utc::now().timestamp();
 

@@ -22,7 +22,6 @@ pub const USER_AGENT: &str = concat!(
 pub const AUTH_WINDOW: &str = "auth";
 pub const MAIN_WINDOW: &str = "main";
 
-/// The three sources that authenticate with the Microsoft account.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Source {
@@ -52,7 +51,6 @@ impl Source {
         }
     }
 
-    /// First page opened in the login window.
     pub fn start_url(self) -> &'static str {
         match self {
             Source::Ellucian => "https://portal.santotomas.cl/",
@@ -63,7 +61,6 @@ impl Source {
         }
     }
 
-    /// Domain where the source cookie lives.
     pub fn cookie_url(self) -> &'static str {
         match self {
             Source::Ellucian => "https://experience.elluciancloud.com/ustc/",
@@ -74,7 +71,6 @@ impl Source {
         }
     }
 
-    /// The SSO chain finished and the window is already on the authenticated page.
     pub fn is_ready(self, url: &Url) -> bool {
         match self {
             Source::Ellucian => {
@@ -122,7 +118,6 @@ impl SessionState {
         }
     }
 
-    /// Any failed source leaves the session in `Partial`; the rest keep going.
     pub fn source_failed(self, _source: Source) -> Self {
         SessionState::Partial
     }
@@ -139,8 +134,6 @@ impl SessionState {
     }
 }
 
-/// Session of the three sources. The WebView2 profile stores the cookies;
-/// here only the state is remembered and they are read into memory for `reqwest`.
 pub struct SessionManager {
     app: AppHandle,
     http: HttpClient,
@@ -162,12 +155,10 @@ impl SessionManager {
         self.state.lock().await.clone()
     }
 
-    /// App handle, so other clients can create their windows.
     pub fn app(&self) -> AppHandle {
         self.app.clone()
     }
 
-    /// Connects the three sources in order. One failure does not abort the others.
     pub async fn connect_all(&self) -> Result<SessionState, AppError> {
         let mut failed = 0usize;
 
@@ -186,7 +177,6 @@ impl SessionManager {
         Ok(state)
     }
 
-    /// Per-source reconnect: only opens the window if the health check fails.
     pub async fn ensure(&self, source: Source) -> Result<(), AppError> {
         if self.health(source).await? {
             return Ok(());
@@ -212,8 +202,6 @@ impl SessionManager {
         health::check(&self.http, source, &cookies).await
     }
 
-    /// If the source already answers, nothing is opened. If not, the window is opened,
-    /// SSO is completed, the cookies are read and it is closed.
     async fn authenticate(&self, source: Source) -> Result<(), AppError> {
         if self.health(source).await.unwrap_or(false) {
             return Ok(());
@@ -246,8 +234,6 @@ impl SessionManager {
             .ok_or_else(|| AppError::Internal("no hay ventana para leer cookies".into()))
     }
 
-    /// Checks the three sources without opening windows. Persistence in
-    /// `source_status` arrives with the pool, in Task 9.
     pub async fn refresh_health(&self) -> SessionState {
         let mut down = Vec::new();
         for source in Source::ALL {

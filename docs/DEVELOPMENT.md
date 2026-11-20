@@ -1,4 +1,4 @@
-# Development
+﻿# Development
 
 ## 1. Prerequisites
 
@@ -14,8 +14,8 @@ bun install
 bun run tauri dev
 ```
 
-The first build compiles around 530 crates and takes several minutes. Later builds are
-incremental.
+The first build compiles around 530 crates and takes several minutes. Stop `tauri dev`
+before running `cargo test`: both write to the same target directory.
 
 ## 3. Commands
 
@@ -65,7 +65,7 @@ All four green. A failing test you did not cause still gets reported by name.
 - Sync tests use fake sources (`tests/sync_orchestrator.rs`) and an in-memory database.
 - Frontend tests use Vitest with `jsdom`.
 
-Current totals: 63 Rust tests and 1 frontend test.
+Current totals: 64 Rust tests and 5 frontend tests.
 
 ## 7. Conventions
 
@@ -90,6 +90,12 @@ Current totals: 63 Rust tests and 1 frontend test.
 | `FileName` escapes the downloads folder                    | Only separators were replaced                                               | `safe_name` keeps the last path component                              |
 | Moodle answers HTML instead of JSON                        | Session expired                                                             | Detect login `errorcode` and return `Unauthorized`                     |
 
+**Rust target directory:** `tauri dev` and `cargo test` write to the same `target`
+directory. Running both at once poisons the incremental cache and produces
+`E0460`/`E0786` ("found possibly newer version of crate"). Stop the app before running
+cargo, and note that `[profile.dev] incremental = false` is set in `Cargo.toml` for this
+reason.
+
 ## 9. Data locations
 
 | What      | Where                                                  |
@@ -99,25 +105,15 @@ Current totals: 63 Rust tests and 1 frontend test.
 | Cookies   | WebView2 profile, never copied out                     |
 | Logs      | stderr; `tracing` honours `RUST_LOG`                   |
 
-## 10. Roadmap
+## 10. Status
 
-| Task                               | State                                |
-| ---------------------------------- | ------------------------------------ |
-| 1. Scaffolding and tests           | Done                                 |
-| 2. SQLite schema and models        | Done                                 |
-| 3. Errors, HTTP client and limiter | Done                                 |
-| 4. Session, cookies and windows    | Done                                 |
-| 5. Moodle adapter                  | Done                                 |
-| 6. Ellucian adapter                | Done                                 |
-| 7. Banner adapter                  | Done                                 |
-| 8. Course linking and repositories | Done                                 |
-| 9. Sync orchestrator               | Done, verified with the real account |
-| 10. Commands and DTOs              | Done                                 |
-| 11. UI shell and onboarding        | Pending                              |
-| 12. Data screens                   | Pending                              |
-| 13. Packaging and updates          | Pending                              |
-| 14. End-to-end verification        | Pending                              |
+**Working:** desktop shell, SQLite schema, HTTP client with rate limiting, the three
+source adapters, course linking, the sync orchestrator, the commands the UI consumes,
+and the onboarding with per-source connection.
 
-Known gaps that do not block: Moodle totals (the per-user report does not exist),
-Banner GPA (not persisted yet), announcements (no course exposed a recognizable news
-forum) and section fetches that could run four at a time.
+**Missing:** the data screens, the Windows installer with updates, and the end-to-end
+checklist on a clean machine.
+
+**Known gaps:** Moodle totals (the per-user report does not exist), Banner GPA (not
+persisted), announcements (no course exposed a recognizable news forum) and section
+fetches that could run four at a time.

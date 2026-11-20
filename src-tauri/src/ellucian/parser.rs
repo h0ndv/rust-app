@@ -137,7 +137,6 @@ pub fn parse_schedule_response(raw: &str) -> Result<Vec<InstructionalEvent>, App
     Ok(out)
 }
 
-/// A short title and a long one per course; it keeps the long one.
 fn course_title(section: &Value) -> String {
     section
         .pointer("/course/titles")
@@ -206,7 +205,6 @@ pub fn parse_classes_response(raw: &str) -> Result<Vec<EllucianClass>, AppError>
     Ok(out)
 }
 
-/// The query returns one row per section; terms are deduplicated by id.
 pub fn parse_periods_response(raw: &str) -> Result<Vec<AcademicPeriod>, AppError> {
     let payload = payload(raw)?;
     let edges = edges(&payload, "sectionRegistrations")?;
@@ -235,8 +233,6 @@ pub fn parse_periods_response(raw: &str) -> Result<Vec<AcademicPeriod>, AppError
     Ok(out)
 }
 
-/// The current term is the latest one that already started. If none started,
-/// the one that starts first is taken.
 pub fn current_period(periods: &[AcademicPeriod], now: i64) -> Option<&AcademicPeriod> {
     let started = periods
         .iter()

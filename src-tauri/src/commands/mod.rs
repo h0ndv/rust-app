@@ -14,7 +14,6 @@ use url::Url;
 use crate::state::AppState;
 use crate::sync::Downloads;
 
-/// A single reused `browser` window: it keeps the profile session.
 #[tauri::command]
 pub async fn open_in_app(app: AppHandle, url: String) -> Result<(), String> {
     let parsed = Url::parse(&url).map_err(|error| error.to_string())?;
@@ -57,8 +56,7 @@ const CLEAR_ORDER: [&str; 14] = [
     "sync_runs",
 ];
 
-/// Deletes the local data. The WebView2 profile is not touched while the app
-/// is open; that is left for the Settings screen in Task 12.
+/// Deletes the local data. The WebView2 profile is left untouched.
 #[tauri::command]
 pub async fn clear_data(state: State<'_, AppState>) -> Result<u64, String> {
     let mut deleted = 0u64;

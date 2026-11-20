@@ -35,8 +35,6 @@ pub async fn read_bytes(response: Response) -> Result<Vec<u8>, AppError> {
     }
 }
 
-/// HTTP client shared by the three sources. It is `Clone`: copies
-/// share pooled connections, rate limit and budget.
 #[derive(Clone)]
 pub struct HttpClient {
     client: Client,
@@ -60,8 +58,6 @@ impl HttpClient {
         }
     }
 
-    /// Rate limiter handle so the orchestrator can reset the budget
-    /// at the start of each run.
     pub fn limiter(&self) -> Arc<RateLimiter> {
         Arc::clone(&self.limiter)
     }
@@ -133,7 +129,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn mapea_estados_a_errores() {
+    fn maps_statuses_to_errors() {
         assert!(matches!(
             status_error(StatusCode::UNAUTHORIZED),
             Some(AppError::Unauthorized)
@@ -153,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn deja_pasar_los_estados_que_el_adaptador_interpreta() {
+    fn lets_through_statuses_the_adapter_interprets() {
         assert!(status_error(StatusCode::OK).is_none());
         assert!(status_error(StatusCode::BAD_REQUEST).is_none());
         assert!(status_error(StatusCode::INTERNAL_SERVER_ERROR).is_none());

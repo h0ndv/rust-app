@@ -136,7 +136,6 @@ pub fn parse_calendar_json(raw: &str) -> Result<Vec<MoodleEvent>, AppError> {
     Ok(out)
 }
 
-/// Section numbers of the course page, plus the 0 of the general section.
 pub fn parse_section_numbers(html: &str) -> Vec<i64> {
     let doc = Html::parse_document(html);
     let mut numbers = std::collections::BTreeSet::from([0_i64]);
@@ -259,7 +258,6 @@ pub fn parse_course_html(html: &str, section: i64) -> Result<MoodleSection, AppE
     })
 }
 
-/// URL of the course announcements forum, if it exists.
 pub fn parse_news_forum_url(html: &str) -> Option<String> {
     let doc = Html::parse_document(html);
     let forum = selector("li.activity.modtype_forum");
@@ -462,8 +460,6 @@ pub fn parse_grade_total_html(html: &str) -> Result<MoodleGradeTotal, AppError> 
         .ok_or_else(|| AppError::Parse("sin total del curso".into()))
 }
 
-/// Open, close and cutoff come as text inside
-/// `[data-region='activity-dates']`.
 fn parse_activity_dates(doc: &Html) -> (Option<i64>, Option<i64>) {
     let block = doc
         .select(&selector("[data-region=\"activity-dates\"]"))
@@ -602,7 +598,6 @@ pub fn parse_attachments(html: &str) -> Vec<MoodleFile> {
     out
 }
 
-/// Text of the activity description, if the page carries it.
 pub fn parse_description(html: &str) -> String {
     let doc = Html::parse_document(html);
     for css in [

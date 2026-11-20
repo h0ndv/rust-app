@@ -1,7 +1,6 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use thiserror::Error;
 
-/// App error. The interface receives `kind` and `message`.
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("Fallo de red: {0}")]
@@ -52,7 +51,7 @@ mod tests {
     }
 
     #[test]
-    fn cada_variante_tiene_su_kind() {
+    fn every_variant_has_its_kind() {
         let casos = [
             (AppError::Network("dns".into()), "network"),
             (AppError::Unauthorized, "unauthorized"),
@@ -63,7 +62,7 @@ mod tests {
         ];
         for (error, kind) in casos {
             let json = serde_json::to_value(&error).unwrap();
-            assert_eq!(json["kind"], kind, "kind incorrecto para {error:?}");
+            assert_eq!(json["kind"], kind, "wrong kind for {error:?}");
         }
     }
 }

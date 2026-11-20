@@ -8,7 +8,6 @@ pub const MOODLE_BASE: &str = "https://aulasvirtuales.santotomas.cl";
 pub const BANNER_BASE: &str =
     "https://selferviceprd.santotomas.cl/StudentSelfService/studentGrades";
 
-/// Subject code inside the course name: `IGR-00167-00G`.
 pub fn course_code(fullname: &str) -> Option<(String, String, String)> {
     let regex = Regex::new(r"([A-Z]{3})-(\d{5})-([A-Z0-9]{3})").expect("regex válida");
     let caps = regex.captures(fullname)?;
@@ -19,7 +18,6 @@ pub fn course_code(fullname: &str) -> Option<(String, String, String)> {
     ))
 }
 
-/// The Moodle shortname is `CRN.SEMESTER`, for example `30061.202620`.
 fn shortname_parts(shortname: &str) -> (Option<String>, Option<String>) {
     match shortname.split_once('.') {
         Some((crn, term)) => {
@@ -58,7 +56,6 @@ pub fn link_courses(moodle: &[MoodleCourse], banner: &[BannerGrade]) -> Vec<Cour
                 .position(|grade| &grade.crn == crn && term_matches(term.as_deref(), &grade.term));
         }
 
-        // Otherwise, code and section from the name.
         if found.is_none()
             && let Some((subject, number, section)) = &code
         {
@@ -102,7 +99,6 @@ pub fn link_courses(moodle: &[MoodleCourse], banner: &[BannerGrade]) -> Vec<Cour
     links
 }
 
-/// One row per real section. The lecture and lab of the same code are two rows.
 pub fn course_rows(
     moodle: &[MoodleCourse],
     banner: &[BannerGrade],
@@ -180,7 +176,6 @@ fn clean_name(fullname: &str, code: &str) -> String {
     name.trim().trim_end_matches('-').trim().to_string()
 }
 
-/// One group per subject code, no matter how many sections it has.
 pub fn course_groups(courses: &[Course]) -> Vec<CourseGroup> {
     let mut groups: Vec<CourseGroup> = Vec::new();
 
@@ -201,7 +196,6 @@ pub fn course_groups(courses: &[Course]) -> Vec<CourseGroup> {
     groups
 }
 
-/// Semester from the Moodle shortname: `30061.202620` → `202620`.
 pub fn shortname_term(shortname: &str) -> Option<String> {
     shortname
         .split_once('.')

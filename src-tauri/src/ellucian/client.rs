@@ -43,7 +43,6 @@ impl EllucianClient {
         parser::parse_periods_response(&body)
     }
 
-    /// Sections of the given term.
     pub async fn fetch_classes_for(&self, period_id: &str) -> Result<Vec<EllucianClass>, AppError> {
         let body = self
             .query(CLASSES_QUERY, json!({ "academicPeriodId": period_id }))
@@ -51,7 +50,6 @@ impl EllucianClient {
         parser::parse_classes_response(&body)
     }
 
-    /// Sections of the current term.
     pub async fn fetch_classes(&self) -> Result<Vec<EllucianClass>, AppError> {
         let periods = self.fetch_periods().await?;
         let current = parser::current_period(&periods, chrono::Utc::now().timestamp())
@@ -66,7 +64,6 @@ impl EllucianClient {
         self.fetch_schedule_for(&classes).await
     }
 
-    /// Same as `fetch_schedule`, but reuses classes already downloaded.
     pub async fn fetch_schedule_for(
         &self,
         classes: &[EllucianClass],

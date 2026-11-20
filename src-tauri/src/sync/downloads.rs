@@ -54,7 +54,6 @@ pub fn safe_name(name: &str) -> String {
     }
 }
 
-/// Download queue in a separate task. The UI only enqueues and listens for events.
 pub struct Downloads {
     sender: mpsc::UnboundedSender<String>,
     token: CancellationToken,

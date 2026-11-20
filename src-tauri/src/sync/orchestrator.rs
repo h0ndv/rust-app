@@ -139,7 +139,6 @@ impl SyncOrchestrator {
         let mut successes = 0usize;
         let mut step = 0u8;
 
-        // 1. Health of the three sources.
         for source in Source::ALL {
             let healthy = self.check_health(source).await;
             if !healthy {
@@ -156,7 +155,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), None, errors.clone());
 
-        // 2. Moodle: courses and calendar.
         let mut moodle_courses: Vec<MoodleCourse> = Vec::new();
         let mut calendar: HashMap<i64, i64> = HashMap::new();
 
@@ -180,7 +178,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), Some(Source::Moodle), errors.clone());
 
-        // 3. Moodle: sections, activities, announcements and totals.
         let mut synced_courses: Vec<String> = Vec::new();
         for course in &moodle_courses {
             if token.is_cancelled() {
@@ -196,7 +193,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), Some(Source::Moodle), errors.clone());
 
-        // 4. Ellucian: classes and schedule.
         let mut classes: Vec<EllucianClass> = Vec::new();
         let mut schedule: Vec<InstructionalEvent> = Vec::new();
         if let Err(error) = self.forced(Source::Ellucian) {
@@ -217,7 +213,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), Some(Source::Ellucian), errors.clone());
 
-        // 5. Banner: terms, levels and grades.
         let mut banner_grades: Vec<BannerGrade> = Vec::new();
         if let Err(error) = self.forced(Source::Banner) {
             errors.push(format!("banner: {error}"));
@@ -233,8 +228,7 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), Some(Source::Banner), errors.clone());
 
-        // 6. Course union and catalog. A subject that comes only from Banner and
-        // already exists in the database (Moodle down) is not duplicated.
+        // A subject that comes only from Banner and already exists in the database is not duplicated.
         let links = link_courses(&moodle_courses, &banner_grades);
         let rows = course_rows(&moodle_courses, &banner_grades, &links);
 
@@ -266,7 +260,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), None, errors.clone());
 
-        // 7. Grades and schedule, now with the courses stored.
         if let Err(error) = self
             .persist_grades(&banner_grades, &by_crn, &mut errors)
             .await
@@ -285,7 +278,6 @@ impl SyncOrchestrator {
         step += 1;
         self.publish(progress(step), None, errors.clone());
 
-        // 8. Mark the courses that synced well and archive what is missing.
         let stamp = Utc::now().to_rfc3339();
         for course_id in &synced_courses {
             if let Err(error) = repo.set_course_synced(course_id, &stamp).await {
@@ -299,7 +291,6 @@ impl SyncOrchestrator {
             Err(error) => errors.push(format!("archivado: {error}")),
         }
 
-        // 9. Close.
         let state = if errors.is_empty() {
             SyncStatusKind::Ok
         } else if successes == 0 {

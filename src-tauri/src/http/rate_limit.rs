@@ -6,10 +6,6 @@ use tokio::time::Instant;
 
 use crate::error::AppError;
 
-/// Request rate and budget. `acquire` hands out one request every
-/// `1 / per_second` seconds, so `per_second` is never exceeded in one
-/// second even with bursts. The budget counts per run and is
-/// reset with `reset_run`.
 pub struct RateLimiter {
     interval: Duration,
     max_per_run: u32,
@@ -45,12 +41,10 @@ impl RateLimiter {
         Ok(())
     }
 
-    /// Called by the orchestrator at the start of each run.
     pub fn reset_run(&self) {
         self.used.store(0, Ordering::SeqCst);
     }
 
-    /// Requests counted in the run, for `sync_runs.requests`.
     pub fn count(&self) -> u32 {
         self.used.load(Ordering::SeqCst)
     }

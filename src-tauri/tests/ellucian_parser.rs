@@ -6,7 +6,7 @@ use rust_app_lib::ellucian::parser::{
 use serde_json::json;
 
 #[test]
-fn parsea_eventos_con_sala_y_profesor() {
+fn parses_events_with_room_and_instructor() {
     let json = include_str!("fixtures/ellucian/schedule.json");
     let events = parse_schedule_response(json).unwrap();
     assert!(!events.is_empty());
@@ -14,11 +14,11 @@ fn parsea_eventos_con_sala_y_profesor() {
 }
 
 #[test]
-fn el_evento_trae_dia_hora_sala_y_profesor() {
+fn event_brings_day_time_room_and_instructor() {
     let events = parse_schedule_response(include_str!("fixtures/ellucian/schedule.json")).unwrap();
     let event = &events[0];
 
-    assert_eq!(event.day_of_week, 5, "viernes");
+    assert_eq!(event.day_of_week, 5, "Friday");
     assert_eq!(event.start_time, "19:21");
     assert_eq!(event.end_time, "20:00");
     assert_eq!(event.room.as_deref(), Some("Sala 401"));
@@ -26,12 +26,12 @@ fn el_evento_trae_dia_hora_sala_y_profesor() {
     assert_eq!(
         event.instructor.as_deref(),
         Some("PABLO LILLO GALLARDO"),
-        "el apellido compuesto viene separado por punto y coma"
+        "compound last names are separated by a semicolon"
     );
 }
 
 #[test]
-fn parsea_las_ocho_asignaturas() {
+fn parses_eight_courses() {
     let classes = parse_classes_response(include_str!("fixtures/ellucian/classes.json")).unwrap();
 
     assert_eq!(classes.len(), 8);
@@ -51,9 +51,9 @@ fn parsea_las_ocho_asignaturas() {
 }
 
 #[test]
-fn elige_el_periodo_mas_reciente_comenzado() {
+fn picks_most_recent_started_period() {
     let periods = parse_periods_response(include_str!("fixtures/ellucian/periods.json")).unwrap();
-    assert_eq!(periods.len(), 6, "se deduplican por id");
+    assert_eq!(periods.len(), 6, "deduplicated by id");
 
     let now = chrono::DateTime::parse_from_rfc3339("2026-11-17T00:00:00Z")
         .unwrap()
@@ -63,7 +63,7 @@ fn elige_el_periodo_mas_reciente_comenzado() {
 }
 
 #[test]
-fn sin_periodos_comenzados_toma_el_primero() {
+fn without_started_periods_takes_first() {
     let periods = vec![
         AcademicPeriod {
             id: "b".into(),
@@ -93,7 +93,7 @@ fn sin_periodos_comenzados_toma_el_primero() {
 }
 
 #[test]
-fn encuentra_el_shortname_de_moodle_en_un_enlace() {
+fn finds_moodle_shortname_in_a_link() {
     let node = json!({
         "aulaVirtual": "https://aulasvirtuales.santotomas.cl/course/view.php?id=821065",
         "shortname": "30061.202620"
@@ -104,7 +104,7 @@ fn encuentra_el_shortname_de_moodle_en_un_enlace() {
 }
 
 #[test]
-fn una_consulta_inexistente_es_error_de_parseo() {
+fn missing_query_is_parse_error() {
     let json = r#"{"errors":[{"code":"query-not-found","message":"Query not found for 'x'"}]}"#;
     assert!(matches!(
         parse_classes_response(json),
@@ -114,7 +114,7 @@ fn una_consulta_inexistente_es_error_de_parseo() {
 
 /// The endpoint answers 400 if the descriptor does not use its exact names.
 #[test]
-fn el_descriptor_usa_los_nombres_del_endpoint() {
+fn descriptor_uses_endpoint_names() {
     use rust_app_lib::ellucian::queries::{
         CARD_ID, EXTENSION_ID, EthosQuery, MANIFEST_TYPE, SCHEDULE_QUERY,
     };

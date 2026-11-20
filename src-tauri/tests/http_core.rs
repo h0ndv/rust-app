@@ -5,7 +5,7 @@ use rust_app_lib::http::HttpClient;
 use rust_app_lib::http::rate_limit::RateLimiter;
 
 #[tokio::test(start_paused = true)]
-async fn limita_a_seis_por_segundo() {
+async fn limits_to_six_per_second() {
     let limiter = RateLimiter::new(6, 600);
     for _ in 0..6 {
         limiter.acquire().await.unwrap();
@@ -16,7 +16,7 @@ async fn limita_a_seis_por_segundo() {
 }
 
 #[tokio::test(start_paused = true)]
-async fn corta_al_agotar_el_presupuesto_de_la_corrida() {
+async fn stops_when_run_budget_is_exhausted() {
     let limiter = RateLimiter::new(6, 3);
     for _ in 0..3 {
         limiter.acquire().await.unwrap();
@@ -32,7 +32,7 @@ async fn corta_al_agotar_el_presupuesto_de_la_corrida() {
 }
 
 #[tokio::test(start_paused = true)]
-async fn reset_run_habilita_otra_corrida() {
+async fn reset_run_enables_another_run() {
     let limiter = RateLimiter::new(6, 2);
     limiter.acquire().await.unwrap();
     limiter.acquire().await.unwrap();
@@ -46,7 +46,7 @@ async fn reset_run_habilita_otra_corrida() {
 }
 
 #[tokio::test]
-async fn una_url_invalida_es_error_de_red() {
+async fn invalid_url_is_network_error() {
     let client = HttpClient::new("rust-app-test");
     let result = client.get("no-es-una-url", "").await;
     assert!(matches!(result, Err(AppError::Network(_))));

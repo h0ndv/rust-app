@@ -16,12 +16,9 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tracing_subscriber::prelude::*;
 
-use auth::{SessionManager, Source};
-use banner::BannerClient;
+use auth::SessionManager;
 use db::repo::Repo;
-use ellucian::EllucianClient;
 use http::HttpClient;
-use moodle::MoodleClient;
 use state::AppState;
 use sync::{Downloads, LiveSources, SyncDeps, SyncOrchestrator};
 
@@ -82,13 +79,6 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            open_login,
-            open_moodle,
-            open_banner,
-            smoke_moodle,
-            smoke_ellucian,
-            smoke_banner,
-            smoke_sync,
             commands::connect,
             commands::session_state,
             commands::start_sync,
@@ -126,135 +116,6 @@ fn tauri_emitter(app: AppHandle) -> sync::EventEmitter {
     Arc::new(move |event: &str, payload: serde_json::Value| {
         let _ = app.emit(event, payload);
     })
-}
-
-/// Temporary harness for Task 4: it checks that opening windows from async
-/// commands does not hang the app. Onboarding replaces it in Task 11.
-#[tauri::command]
-async fn open_login(app: AppHandle) -> Result<(), String> {
-    auth::windows::open_auth_window(&app, Source::Ellucian)
-        .await
-        .map(|_| ())
-        .map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-async fn open_moodle(app: AppHandle) -> Result<(), String> {
-    auth::windows::open_auth_window(&app, Source::Moodle)
-        .await
-        .map(|_| ())
-        .map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-async fn open_banner(app: AppHandle) -> Result<(), String> {
-    auth::windows::open_auth_window(&app, Source::Banner)
-        .await
-        .map(|_| ())
-        .map_err(|error| error.to_string())
-}
-
-/// Temporary harness for Tasks 5 and 6: it tests the clients with the real session.
-#[tauri::command]
-async fn smoke_moodle(session: tauri::State<'_, Arc<SessionManager>>) -> Result<String, String> {
-    let client = MoodleClient::new(
-        HttpClient::new(auth::USER_AGENT),
-        Arc::clone(session.inner()),
-    );
-    let courses = client
-        .fetch_courses()
-        .await
-        .map_err(|error| error.to_string())?;
-    Ok(format!("{} cursos en Moodle", courses.len()))
-}
-
-#[tauri::command]
-async fn smoke_ellucian(session: tauri::State<'_, Arc<SessionManager>>) -> Result<String, String> {
-    let client = EllucianClient::new(
-        HttpClient::new(auth::USER_AGENT),
-        Arc::clone(session.inner()),
-    );
-    let periods = client
-        .fetch_periods()
-        .await
-        .map_err(|error| error.to_string())?;
-    let classes = client
-        .fetch_classes()
-        .await
-        .map_err(|error| error.to_string())?;
-    let schedule = client
-        .fetch_schedule_for(&classes)
-        .await
-        .map_err(|error| error.to_string())?;
-    Ok(format!(
-        "{} periodos, {} clases, {} bloques de horario",
-        periods.len(),
-        classes.len(),
-        schedule.len()
-    ))
-}
-
-#[tauri::command]
-async fn smoke_banner(session: tauri::State<'_, Arc<SessionManager>>) -> Result<String, String> {
-    let client = BannerClient::new(
-        HttpClient::new(auth::USER_AGENT),
-        Arc::clone(session.inner()),
-    );
-    let terms = client.terms().await.map_err(|error| error.to_string())?;
-    let term = terms
-        .iter()
-        .find(|term| term.code != "-1")
-        .map(|term| term.code.clone())
-        .ok_or_else(|| "Banner no devolvió periodos".to_string())?;
-    let levels = client
-        .levels(&term)
-        .await
-        .map_err(|error| error.to_string())?;
-    let level = levels
-        .first()
-        .map(|level| level.code.clone())
-        .ok_or_else(|| "Banner no devolvió niveles".to_string())?;
-    let grades = client
-        .courses(&term, &level, "-2")
-        .await
-        .map_err(|error| error.to_string())?;
-    let gpa = client.gpa(&term).await.map_err(|error| error.to_string())?;
-    Ok(format!(
-        "{} periodos, {} niveles, {} ramos en {}, GPA por periodo {:?}",
-        terms.len(),
-        levels.len(),
-        grades.len(),
-        term,
-        gpa.selected_term
-    ))
-}
-
-/// Temporary harness for Task 9: it runs a full sync with the
-/// real session. Task 10 replaces it.
-#[tauri::command]
-async fn smoke_sync(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    let run = state
-        .sync
-        .run(sync::SyncTrigger::Manual)
-        .await
-        .map_err(|error| error.to_string())?;
-    let groups = state
-        .repo
-        .list_course_groups()
-        .await
-        .map_err(|error| error.to_string())?;
-    let activities: i64 = sqlx::query_scalar("SELECT count(*) FROM activities")
-        .fetch_one(&state.pool)
-        .await
-        .map_err(|error| error.to_string())?;
-
-    Ok(format!(
-        "{:?}: {} peticiones, {} grupos, {} actividades",
-        run.status,
-        run.requests,
-        groups.len(),
-        activities
-    ))
 }
 
 #[cfg(test)]

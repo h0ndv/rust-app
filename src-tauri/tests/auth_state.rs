@@ -5,7 +5,7 @@ fn url(value: &str) -> url::Url {
 }
 
 #[test]
-fn una_fuente_caida_deja_la_sesion_en_parcial() {
+fn one_failed_source_leaves_session_partial() {
     let mut state = SessionState::Disconnected;
     state = state.connecting(Source::Moodle);
     state = state.source_ok(Source::Moodle);
@@ -14,7 +14,7 @@ fn una_fuente_caida_deja_la_sesion_en_parcial() {
 }
 
 #[test]
-fn una_fuente_sana_no_recupera_la_sesion_parcial() {
+fn healthy_source_does_not_recover_partial_session() {
     assert_eq!(
         SessionState::Partial.source_ok(Source::Banner),
         SessionState::Partial
@@ -22,14 +22,14 @@ fn una_fuente_sana_no_recupera_la_sesion_parcial() {
 }
 
 #[test]
-fn el_estado_final_depende_de_las_fuentes_caidas() {
+fn final_state_depends_on_failed_sources() {
     assert_eq!(SessionState::outcome(0), SessionState::Connected);
     assert_eq!(SessionState::outcome(1), SessionState::Partial);
     assert_eq!(SessionState::outcome(3), SessionState::Partial);
 }
 
 #[test]
-fn las_tres_fuentes_bien_terminan_conectadas() {
+fn all_sources_healthy_end_connected() {
     let mut state = SessionState::Disconnected;
     for source in Source::ALL {
         state = state.connecting(source).source_ok(source);
@@ -38,7 +38,7 @@ fn las_tres_fuentes_bien_terminan_conectadas() {
 }
 
 #[test]
-fn el_orden_de_conexion_es_ellucian_moodle_banner() {
+fn connection_order_is_ellucian_moodle_banner() {
     assert_eq!(
         Source::ALL,
         [Source::Ellucian, Source::Moodle, Source::Banner]
@@ -46,7 +46,7 @@ fn el_orden_de_conexion_es_ellucian_moodle_banner() {
 }
 
 #[test]
-fn la_sesion_se_serializa_para_la_interfaz() {
+fn session_serializes_for_the_interface() {
     let json = serde_json::to_value(SessionState::Connecting(Source::Moodle)).unwrap();
     assert_eq!(json["state"], "connecting");
     assert_eq!(json["source"], "moodle");
@@ -57,7 +57,7 @@ fn la_sesion_se_serializa_para_la_interfaz() {
 }
 
 #[test]
-fn reconoce_la_pagina_final_de_cada_fuente() {
+fn recognizes_final_page_of_each_source() {
     assert!(Source::Ellucian.is_ready(&url("https://experience.elluciancloud.com/ustc/")));
     assert!(!Source::Ellucian.is_ready(&url("https://experience.elluciancloud.com/ustc/auth")));
     assert!(!Source::Ellucian.is_ready(&url("https://portal.santotomas.cl/")));

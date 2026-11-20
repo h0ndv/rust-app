@@ -56,8 +56,6 @@ pub trait BannerSource: Send + Sync {
     async fn grades(&self, term: &str, level: &str) -> Result<Vec<BannerGrade>, AppError>;
 }
 
-/// A new source adds a field here and a block in the run; the orchestrator
-/// signature does not change.
 pub struct SyncDeps {
     pub moodle: Arc<dyn MoodleSource>,
     pub ellucian: Arc<dyn EllucianSource>,
@@ -67,7 +65,6 @@ pub struct SyncDeps {
     pub emitter: Option<crate::sync::EventEmitter>,
 }
 
-/// Implements the three traits over the real clients.
 pub struct LiveSources {
     session: Arc<SessionManager>,
     moodle: MoodleClient,

@@ -70,7 +70,6 @@ struct SectionRow {
     pending_tasks: i64,
 }
 
-/// Repository over the pool.
 #[derive(Clone)]
 pub struct Repo {
     pool: SqlitePool,
@@ -81,7 +80,6 @@ impl Repo {
         Self { pool }
     }
 
-    /// Shared pool, for one-off queries from the sync.
     pub fn pool(&self) -> &SqlitePool {
         &self.pool
     }
@@ -659,7 +657,6 @@ impl Repo {
 }
 
 impl Repo {
-    /// Id of the row that already represents that CRN, preferring the Moodle one.
     pub async fn course_id_by_crn(&self, crn: &str) -> Result<Option<String>, AppError> {
         sqlx::query_scalar(
             "SELECT id FROM courses WHERE banner_crn = ?
@@ -673,7 +670,6 @@ impl Repo {
 }
 
 impl Repo {
-    /// Closes the runs left in `running` by an abrupt shutdown.
     pub async fn finish_stale_runs(&self, at: &str) -> Result<u64, AppError> {
         sqlx::query(
             "UPDATE sync_runs SET status = 'failed', finished_at = ?, errors_json = ?

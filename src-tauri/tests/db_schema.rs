@@ -11,7 +11,7 @@ async fn test_pool() -> sqlx::SqlitePool {
 }
 
 #[tokio::test]
-async fn crea_todas_las_tablas() {
+async fn creates_all_tables() {
     let pool = test_pool().await;
     for table in [
         "course_groups",
@@ -36,18 +36,18 @@ async fn crea_todas_las_tablas() {
                 .fetch_one(&pool)
                 .await
                 .unwrap();
-        assert_eq!(exists, 1, "falta {table}");
+        assert_eq!(exists, 1, "missing {table}");
     }
 }
 
 #[tokio::test]
-async fn el_esquema_se_puede_aplicar_dos_veces() {
+async fn schema_can_be_applied_twice() {
     let pool = test_pool().await;
     migrate(&pool).await.unwrap();
 }
 
 #[tokio::test]
-async fn cursos_y_actividades_hacen_ida_y_vuelta() {
+async fn courses_and_activities_round_trip() {
     let pool = test_pool().await;
     let repo = Repo::new(pool.clone());
 
@@ -107,7 +107,7 @@ async fn cursos_y_actividades_hacen_ida_y_vuelta() {
 /// Characterization: the real startup uses a file in `app_data_dir`,
 /// not `:memory:`. It covers the path with `create_if_missing` and WAL.
 #[tokio::test]
-async fn la_base_en_archivo_persiste_entre_aberturas() {
+async fn file_database_persists_between_opens() {
     let dir = std::env::temp_dir().join(format!("rust-app-test-{}", uuid::Uuid::new_v4()));
     let db_path = dir.join("panel.db");
 
@@ -144,7 +144,7 @@ async fn la_base_en_archivo_persiste_entre_aberturas() {
 }
 
 #[tokio::test]
-async fn el_indice_de_busqueda_responde_a_match() {
+async fn search_index_answers_match() {
     let pool = test_pool().await;
 
     sqlx::query("INSERT INTO search_index (kind, entity_id, title, body) VALUES (?, ?, ?, ?)")
@@ -167,7 +167,7 @@ async fn el_indice_de_busqueda_responde_a_match() {
 }
 
 #[tokio::test]
-async fn la_base_en_archivo_usa_wal_synchronous_normal_y_tope_de_wal() {
+async fn file_database_uses_wal_normal_synchronous_and_size_limit() {
     let dir = std::env::temp_dir().join(format!("rust-app-pragmas-{}", uuid::Uuid::new_v4()));
     let db_path = dir.join("panel.db");
 

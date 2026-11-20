@@ -29,7 +29,6 @@ pub async fn mark_new(pool: &SqlitePool, kind: &str, id: &str) -> Result<(), App
     .map(|_| ())
 }
 
-/// Marks an item as seen by the student.
 pub async fn acknowledge(pool: &SqlitePool, kind: &str, id: &str) -> Result<(), AppError> {
     let table = match kind {
         "activity" => "activities",

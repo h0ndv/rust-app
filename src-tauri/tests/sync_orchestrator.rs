@@ -210,13 +210,13 @@ async fn test_state() -> AppState {
 }
 
 #[test]
-fn el_limite_cuenta_las_peticiones_de_la_corrida() {
+fn limiter_counts_run_requests() {
     let limiter = RateLimiter::new(6, 10);
     assert_eq!(limiter.count(), 0);
 }
 
 #[tokio::test]
-async fn una_corrida_completa_guarda_el_catalogo() {
+async fn full_run_saves_catalog() {
     let state = test_state().await;
     let run = state
         .sync
@@ -233,14 +233,13 @@ async fn una_corrida_completa_guarda_el_catalogo() {
     assert_eq!(groups[0].name, "Minería de Datos");
     assert_eq!(groups[0].sections.len(), 1);
 
-    // Baseline: the first run leaves nothing as new.
     let acknowledged: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM activities WHERE acknowledged_at IS NOT NULL AND archived_at IS NULL",
     )
     .fetch_one(&state.pool)
     .await
     .unwrap();
-    assert_eq!(acknowledged, 1, "una actividad, ya vista");
+    assert_eq!(acknowledged, 1, "one activity, already seen");
 
     let files: i64 = sqlx::query_scalar("SELECT count(*) FROM files")
         .fetch_one(&state.pool)
@@ -252,17 +251,17 @@ async fn una_corrida_completa_guarda_el_catalogo() {
         .fetch_one(&state.pool)
         .await
         .unwrap();
-    assert_eq!(events, 1, "el horario de Ellucian");
+    assert_eq!(events, 1, "the Ellucian schedule");
 
     let totals: i64 = sqlx::query_scalar("SELECT count(*) FROM grade_totals")
         .fetch_one(&state.pool)
         .await
         .unwrap();
-    assert_eq!(totals, 2, "total de Moodle y de Banner por separado");
+    assert_eq!(totals, 2, "Moodle and Banner totals kept apart");
 }
 
 #[tokio::test]
-async fn sesion_vencida_conserva_datos_y_marca_parcial() {
+async fn expired_session_keeps_data_and_marks_partial() {
     let state = test_state().await;
     state
         .sync
@@ -277,12 +276,12 @@ async fn sesion_vencida_conserva_datos_y_marca_parcial() {
     assert_eq!(
         state.repo.course_count().await.unwrap(),
         1,
-        "el curso anterior sigue ahí"
+        "the previous course is still there"
     );
 }
 
 #[tokio::test]
-async fn la_segunda_corrida_marca_solo_lo_nuevo() {
+async fn second_run_marks_only_new_items() {
     let state = test_state().await;
     state
         .sync
@@ -306,18 +305,18 @@ async fn la_segunda_corrida_marca_solo_lo_nuevo() {
             .await
             .unwrap();
 
-    assert!(old.is_some(), "la actividad conocida sigue reconocida");
-    assert!(new.is_none(), "la nueva queda como novedad");
+    assert!(old.is_some(), "the known activity stays acknowledged");
+    assert!(new.is_none(), "the new one stays new");
 
     let events: i64 = sqlx::query_scalar("SELECT count(*) FROM events WHERE kind = 'activity'")
         .fetch_one(&state.pool)
         .await
         .unwrap();
-    assert_eq!(events, 1, "un solo evento, el de la actividad nueva");
+    assert_eq!(events, 1, "only the event of the new activity");
 }
 
 #[tokio::test]
-async fn archiva_lo_que_dejo_de_aparecer_solo_si_el_curso_sincronizo() {
+async fn archives_disappeared_items_only_if_course_synced() {
     let state = test_state().await;
     let now = chrono::Utc::now();
     let stale = (now - chrono::Duration::days(8)).to_rfc3339();
@@ -395,12 +394,15 @@ async fn archiva_lo_que_dejo_de_aparecer_solo_si_el_curso_sincronizo() {
             .await
             .unwrap();
 
-    assert!(archived_first.is_some(), "el curso que sincronizó archiva");
-    assert!(archived_second.is_none(), "el curso caído no archiva nada");
+    assert!(archived_first.is_some(), "the course that synced archives");
+    assert!(
+        archived_second.is_none(),
+        "the failed course archives nothing"
+    );
 }
 
 #[test]
-fn el_nombre_de_archivo_es_seguro() {
+fn file_name_is_safe() {
     assert_eq!(safe_name("../../x.pdf"), "x.pdf");
     assert_eq!(safe_name("a\\b.pdf"), "b.pdf");
     assert_eq!(safe_name(".."), "archivo");

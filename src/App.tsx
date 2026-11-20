@@ -1,93 +1,101 @@
-import { invoke } from '@tauri-apps/api/core';
+import { RouterProvider } from '@tanstack/react-router';
 import { useState } from 'react';
 
-function App() {
-    const [status, setStatus] = useState('');
+import { router } from './app/router';
+import {
+    STEP_ORDER,
+    type StepStatus,
+} from './features/onboarding/LoginProgress';
+import {
+    Onboarding,
+    type OnboardingState,
+} from './features/onboarding/Onboarding';
+import { api, type Source } from './lib/api';
 
-    async function open(command: string) {
-        setStatus('Ejecutando');
+const STALL_MS = 90_000;
+
+const INITIAL_STEPS: Record<Source, StepStatus> = {
+    ellucian: 'pending',
+    moodle: 'pending',
+    banner: 'pending',
+};
+
+function App() {
+    const [state, setState] = useState<OnboardingState>('welcome');
+    const [steps, setSteps] =
+        useState<Record<Source, StepStatus>>(INITIAL_STEPS);
+    const [failedSource, setFailedSource] = useState<Source>();
+    const [stalledSource, setStalledSource] = useState<Source>();
+    const [error, setError] = useState<string>();
+    const [ready, setReady] = useState(false);
+
+    async function runStep(source: Source): Promise<boolean> {
+        setSteps((current) => ({ ...current, [source]: 'active' }));
+        setStalledSource(undefined);
+
+        const timer = window.setTimeout(
+            () => setStalledSource(source),
+            STALL_MS,
+        );
+
         try {
-            const result = await invoke<string | void>(command);
-            setStatus(typeof result === 'string' ? result : 'Ventana lista');
-        } catch (error) {
-            setStatus(String(error));
+            await api.connect(source);
+            window.clearTimeout(timer);
+            setSteps((current) => ({ ...current, [source]: 'done' }));
+            return true;
+        } catch (cause) {
+            window.clearTimeout(timer);
+            setSteps((current) => ({ ...current, [source]: 'failed' }));
+            setFailedSource(source);
+            setError(String(cause));
+            return false;
         }
     }
 
-    return (
-        <main className="flex min-h-svh flex-col items-center justify-center gap-2 bg-background p-8 text-foreground">
-            <h1 className="text-2xl font-semibold tracking-tight">rust-app</h1>
-            <p className="text-sm text-muted-foreground">
-                Sin datos todavía. Falta conectar la cuenta y sincronizar.
-            </p>
+    async function connectAll(): Promise<void> {
+        setState('connecting');
+        setFailedSource(undefined);
+        setStalledSource(undefined);
+        setError(undefined);
 
-            {/* Arnés temporal de la Task 4. Lo reemplaza el onboarding en la Task 11. */}
-            <div className="mt-6 flex flex-col items-center gap-2 rounded-lg border border-border p-4">
-                <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Prueba de ventanas
-                </p>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('open_login')}
-                    >
-                        Login
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('open_moodle')}
-                    >
-                        Moodle
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('open_banner')}
-                    >
-                        Banner
-                    </button>
-                </div>
-                <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Prueba de clientes
-                </p>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('smoke_moodle')}
-                    >
-                        API Moodle
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('smoke_ellucian')}
-                    >
-                        API Ellucian
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                        onClick={() => open('smoke_banner')}
-                    >
-                        API Banner
-                    </button>
-                </div>
-                <button
-                    type="button"
-                    className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-                    onClick={() => open('smoke_sync')}
-                >
-                    Sincronizar
-                </button>
-                {status ? (
-                    <p className="text-xs text-muted-foreground">{status}</p>
-                ) : null}
-            </div>
-        </main>
-    );
+        let failed = false;
+        for (const source of STEP_ORDER) {
+            const ok = await runStep(source);
+            failed = failed || !ok;
+        }
+
+        setState(failed ? 'partial' : 'connected');
+    }
+
+    async function retry(source: Source): Promise<void> {
+        setState('connecting');
+        const ok = await runStep(source);
+
+        if (ok) {
+            setFailedSource(undefined);
+            setError(undefined);
+            setState('connected');
+        } else {
+            setState('partial');
+        }
+    }
+
+    if (!ready) {
+        return (
+            <Onboarding
+                state={state}
+                steps={steps}
+                failedSource={failedSource}
+                stalledSource={stalledSource}
+                error={error}
+                onConnect={connectAll}
+                onRetry={retry}
+                onContinue={() => setReady(true)}
+            />
+        );
+    }
+
+    return <RouterProvider router={router} />;
 }
 
 export default App;

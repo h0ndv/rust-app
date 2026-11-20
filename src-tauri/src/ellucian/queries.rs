@@ -9,13 +9,9 @@ pub const EXTENSION_ID: &str = "6f147f85-1a0f-4d88-884c-ada96a44bdb9";
 pub const CARD_ID: &str = "001G000000oShyJIAS|Ellucian-LAC|Clases|Clases";
 pub const MANIFEST_TYPE: &str = "Clases";
 
-/// Terms of the student, with their records per semester.
 pub const PERIODS_QUERY: &str = "student-academic-periods";
-/// Sections of the requested term.
 pub const CLASSES_QUERY: &str = "section-registrations-by-academic-period";
-/// Schedule blocks of a section.
 pub const SCHEDULE_QUERY: &str = "instructional-events-by-section";
-/// Grades of a section.
 pub const GRADES_QUERY: &str = "student-transcript-grades";
 
 #[derive(Debug, Serialize)]

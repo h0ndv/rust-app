@@ -139,7 +139,6 @@ impl MoodleClient {
         parser::parse_calendar_json(&body)
     }
 
-    /// One page per section, not one per activity.
     pub async fn fetch_sections(&self, course_id: i64) -> Result<Vec<MoodleSection>, AppError> {
         let first_page = self
             .get_path(&format!("/course/view.php?id={course_id}"))
@@ -166,7 +165,6 @@ impl MoodleClient {
         parser::parse_assignment_html(&html)
     }
 
-    /// Raw page of an activity, to extract description and attachments.
     pub async fn fetch_page(&self, url: &str) -> Result<String, AppError> {
         self.get_text(url).await
     }

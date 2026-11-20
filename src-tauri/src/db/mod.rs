@@ -51,7 +51,6 @@ pub async fn connect(path: &Path) -> Result<SqlitePool, AppError> {
         .map_err(|e| AppError::Internal(format!("no se pudo abrir la base: {e}")))
 }
 
-/// Applies the versioned migrations from `migrations/`.
 pub async fn migrate(pool: &SqlitePool) -> Result<(), AppError> {
     sqlx::migrate!("./migrations")
         .run(pool)

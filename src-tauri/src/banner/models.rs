@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Term, level or study plan: Banner returns them in the same shape.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BannerOption {
     pub code: String,
@@ -11,7 +10,6 @@ pub struct BannerOption {
 pub struct BannerGrade {
     pub subject: String,
     pub number: String,
-    /// CRN of the section, for example `30061`.
     pub crn: String,
     pub section: String,
     pub title: String,

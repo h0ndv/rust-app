@@ -5,7 +5,7 @@ use rust_app_lib::moodle::parser::{
 };
 
 #[test]
-fn parsea_ocho_cursos() {
+fn parses_eight_courses() {
     let json = include_str!("fixtures/moodle/courses.json");
     let courses = parse_courses_json(json).unwrap();
     assert_eq!(courses.len(), 8);
@@ -17,7 +17,7 @@ fn parsea_ocho_cursos() {
 }
 
 #[test]
-fn parsea_el_calendario_del_curso() {
+fn parses_course_calendar() {
     let json = include_str!("fixtures/moodle/calendar.json");
     let events = parse_calendar_json(json).unwrap();
     assert!(!events.is_empty());
@@ -27,7 +27,7 @@ fn parsea_el_calendario_del_curso() {
 }
 
 #[test]
-fn parsea_una_unidad_con_actividades() {
+fn parses_section_with_activities() {
     let html = include_str!("fixtures/moodle/course_821065_s3.html");
     let section = parse_course_html(html, 3).unwrap();
 
@@ -52,12 +52,12 @@ fn parsea_una_unidad_con_actividades() {
 }
 
 #[test]
-fn html_vacio_es_error_de_parseo() {
+fn empty_html_is_parse_error() {
     assert!(matches!(parse_course_html("", 0), Err(AppError::Parse(_))));
 }
 
 #[test]
-fn parsea_estado_de_tarea_sin_entrega() {
+fn parses_assignment_state_without_submission() {
     let html = include_str!("fixtures/moodle/assign_821065_module-22053263.html");
     let assignment = parse_assignment_html(html).unwrap();
     assert!(!assignment.submitted);
@@ -66,7 +66,7 @@ fn parsea_estado_de_tarea_sin_entrega() {
 }
 
 #[test]
-fn parsea_anuncios_del_foro() {
+fn parses_forum_announcements() {
     let html = r#"<div class="forumpost"><h3>Cambio de sala</h3><div class="posting">La clase se mueve a la 505.</div></div>"#;
     let items = parse_announcements_html(html).unwrap();
     assert_eq!(items[0].title, "Cambio de sala");
@@ -74,14 +74,14 @@ fn parsea_anuncios_del_foro() {
 }
 
 #[test]
-fn parsea_total_de_moodle() {
+fn parses_moodle_total() {
     let html = r#"<table class="user-grade"><tr class="course-total"><td>Total</td><td>6,2</td></tr></table>"#;
     let total = parse_grade_total_html(html).unwrap();
     assert_eq!(total.total, 6.2);
 }
 
 #[test]
-fn una_pagina_de_login_es_sesion_vencida() {
+fn login_page_is_expired_session() {
     let json =
         r#"[{"error":true,"exception":{"errorcode":"requirelogin","message":"Sesión vencida"}}]"#;
     assert!(matches!(
