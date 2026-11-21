@@ -5,18 +5,18 @@ import {
     Outlet,
 } from '@tanstack/react-router';
 
-import { AppShell } from './AppShell';
+import { CourseDetailScreen } from '@/features/courses/CourseDetail';
+import { CoursesScreen } from '@/features/courses/Courses';
+import { GradesScreen } from '@/features/grades/Grades';
+import { HomeScreen } from '@/features/home/Home';
+import { NewsScreen } from '@/features/news/News';
+import { ResourcesScreen } from '@/features/resources/Resources';
+import { ScheduleScreen } from '@/features/schedule/Schedule';
+import { SearchScreen } from '@/features/search/Search';
+import { SettingsScreen } from '@/features/settings/Settings';
+import { TasksScreen } from '@/features/tasks/Tasks';
 
-function Placeholder({ title }: { title: string }) {
-    return (
-        <section className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-            <p className="text-sm text-muted-foreground">
-                Esta sección se conecta al backend en la siguiente tarea.
-            </p>
-        </section>
-    );
-}
+import { AppShell } from './AppShell';
 
 function Root() {
     return (
@@ -28,31 +28,78 @@ function Root() {
 
 const rootRoute = createRootRoute({ component: Root });
 
-const routes = [
-    { path: '/', title: 'Inicio' },
-    { path: '/ramos', title: 'Ramos' },
-    { path: '/tareas', title: 'Tareas' },
-    { path: '/recursos', title: 'Recursos' },
-    { path: '/notas', title: 'Notas' },
-    { path: '/horario', title: 'Horario' },
-    { path: '/novedades', title: 'Novedades' },
-    { path: '/buscar', title: 'Buscador' },
-    { path: '/ajustes', title: 'Ajustes' },
-].map(({ path, title }) =>
-    createRoute({
-        getParentRoute: () => rootRoute,
-        path,
-        component: () => <Placeholder title={title} />,
-    }),
-);
-
-const detailRoute = createRoute({
+const homeRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/ramos/$groupId',
-    component: () => <Placeholder title="Detalle del ramo" />,
+    path: '/',
+    component: HomeScreen,
 });
 
-export const routeTree = rootRoute.addChildren([...routes, detailRoute]);
+const coursesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/ramos',
+    component: CoursesScreen,
+});
+
+const courseDetailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/ramos/$groupId',
+    component: CourseDetailScreen,
+});
+
+const tasksRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/tareas',
+    component: TasksScreen,
+});
+
+const resourcesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/recursos',
+    component: ResourcesScreen,
+});
+
+const gradesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/notas',
+    component: GradesScreen,
+});
+
+const scheduleRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/horario',
+    component: ScheduleScreen,
+});
+
+const newsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/novedades',
+    component: NewsScreen,
+});
+
+const searchRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/buscar',
+    component: SearchScreen,
+});
+
+const settingsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/ajustes',
+    component: SettingsScreen,
+});
+
+export const routeTree = rootRoute.addChildren([
+    homeRoute,
+    coursesRoute,
+    courseDetailRoute,
+    tasksRoute,
+    resourcesRoute,
+    gradesRoute,
+    scheduleRoute,
+    newsRoute,
+    searchRoute,
+    settingsRoute,
+]);
 
 export const router = createRouter({ routeTree });
 

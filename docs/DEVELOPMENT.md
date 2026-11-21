@@ -1,4 +1,4 @@
-﻿# Development
+# Development
 
 ## 1. Prerequisites
 
@@ -65,7 +65,7 @@ All four green. A failing test you did not cause still gets reported by name.
 - Sync tests use fake sources (`tests/sync_orchestrator.rs`) and an in-memory database.
 - Frontend tests use Vitest with `jsdom`.
 
-Current totals: 64 Rust tests and 5 frontend tests.
+Current totals: 64 Rust tests and 9 frontend tests.
 
 ## 7. Conventions
 
@@ -109,10 +109,10 @@ reason.
 
 **Working:** desktop shell, SQLite schema, HTTP client with rate limiting, the three
 source adapters, course linking, the sync orchestrator, the commands the UI consumes,
-and the onboarding with per-source connection.
+the onboarding with per-source connection and the ten data screens.
 
-**Missing:** the data screens, the Windows installer with updates, and the end-to-end
-checklist on a clean machine.
+**Missing:** the Windows installer with updates, and the end-to-end checklist on a
+clean machine.
 
 **Known gaps:** Moodle totals (the per-user report does not exist), Banner GPA (not
 persisted), announcements (no course exposed a recognizable news forum) and section

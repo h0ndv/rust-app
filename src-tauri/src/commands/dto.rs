@@ -38,6 +38,7 @@ pub struct TaskDto {
 pub struct ResourceDto {
     pub id: String,
     pub course_id: Option<String>,
+    pub course: Option<String>,
     pub title: String,
     pub kind: String,
     pub mimetype: Option<String>,

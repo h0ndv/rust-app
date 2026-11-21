@@ -33,6 +33,7 @@ struct TaskRow {
 struct ResourceRow {
     id: String,
     course_id: Option<String>,
+    course_fullname: Option<String>,
     name: String,
     kind: String,
     mimetype: Option<String>,
@@ -102,6 +103,7 @@ impl From<ResourceRow> for ResourceDto {
         Self {
             id: row.id,
             course_id: row.course_id,
+            course: row.course_fullname,
             title: row.name,
             kind: row.kind,
             mimetype: row.mimetype,
@@ -147,10 +149,12 @@ async fn load_tasks(state: &AppState) -> Cmd<Vec<TaskDto>> {
 
 async fn load_resources(state: &AppState) -> Cmd<Vec<ResourceDto>> {
     let rows: Vec<ResourceRow> = sqlx::query_as(
-        "SELECT id, course_id, name, kind, mimetype, size, url, acknowledged_at, local_path
-         FROM files
-         WHERE archived_at IS NULL
-         ORDER BY name",
+        "SELECT f.id, f.course_id, c.fullname AS course_fullname, f.name, f.kind,
+                f.mimetype, f.size, f.url, f.acknowledged_at, f.local_path
+         FROM files f
+         LEFT JOIN courses c ON c.id = f.course_id
+         WHERE f.archived_at IS NULL
+         ORDER BY f.name",
     )
     .fetch_all(&state.pool)
     .await
@@ -362,7 +366,7 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
     {
         items.push(NewsItemDto {
             id: resource.id,
-            course: resource.course_id,
+            course: resource.course,
             title: resource.title,
             body: String::new(),
             published_at: None,

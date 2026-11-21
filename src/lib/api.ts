@@ -43,6 +43,7 @@ export interface TaskDto {
 export interface ResourceDto {
     id: string;
     course_id: string | null;
+    course: string | null;
     title: string;
     kind: string;
     mimetype: string | null;
@@ -143,6 +144,51 @@ export interface SettingsDto {
     notifications: boolean;
 }
 
+export interface ActivityRow {
+    id: string;
+    name: string;
+    modtype: string;
+    status: string | null;
+    due_at: number | null;
+    url: string | null;
+}
+
+export interface FileRow {
+    id: string;
+    name: string;
+    url: string;
+    mimetype: string | null;
+    size: number | null;
+    local_path: string | null;
+}
+
+export interface GradeRow {
+    id: string;
+    name: string;
+    grade: number | null;
+    max_grade: number | null;
+    source: string;
+}
+
+export interface ScheduleRow {
+    id: string;
+    title: string;
+    day_of_week: number | null;
+    start_time: string | null;
+    end_time: string | null;
+    room: string | null;
+    building: string | null;
+    instructor: string | null;
+}
+
+export interface CourseDetailDto {
+    group: CourseGroupDto;
+    tasks: ActivityRow[];
+    resources: FileRow[];
+    grades: GradeRow[];
+    schedule: ScheduleRow[];
+}
+
 export type TaskFilter = 'all' | 'overdue' | 'pending' | 'submitted' | 'graded';
 export type ResourceFilter = 'all' | 'new' | 'downloaded';
 
@@ -157,7 +203,8 @@ export const api = {
 
     getDashboard: () => invoke<DashboardDto>('get_dashboard'),
     listCourses: () => invoke<CourseGroupDto[]>('list_courses'),
-    getCourse: (groupId: string) => invoke<unknown>('get_course', { groupId }),
+    getCourse: (groupId: string) =>
+        invoke<CourseDetailDto>('get_course', { groupId }),
     listTasks: (filter: TaskFilter = 'all') =>
         invoke<TaskDto[]>('list_tasks', { filter }),
     listResources: (filter: ResourceFilter = 'all') =>
