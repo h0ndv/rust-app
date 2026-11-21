@@ -31,7 +31,9 @@ import {
     SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { LANGUAGES } from '@/i18n';
+import { SOURCE_LABEL } from '@/lib/sources';
 
+import { SessionBanner } from './SessionBanner';
 import { SyncBadge } from './SyncBadge';
 import { useDueNotifications } from './use-notifications';
 import { useSyncController } from './use-sync';
@@ -59,12 +61,6 @@ const NAV = [
 interface AppShellProps {
     children: ReactNode;
 }
-
-const SOURCE_LABEL = {
-    moodle: 'Moodle',
-    ellucian: 'Ellucian',
-    banner: 'Banner',
-} as const;
 
 export function AppShell({ children }: AppShellProps) {
     const { t, i18n } = useTranslation();
@@ -168,7 +164,10 @@ export function AppShell({ children }: AppShellProps) {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-auto p-6">{children}</div>
+                <div className="flex-1 overflow-auto p-6">
+                    <SessionBanner />
+                    {children}
+                </div>
             </SidebarInset>
         </SidebarProvider>
     );

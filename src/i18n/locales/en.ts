@@ -8,6 +8,8 @@ export const en = {
         retry: 'Retry',
         continue: 'Continue',
         cancel: 'Cancel',
+        new: 'New',
+        markRead: 'Mark as read',
     },
     nav: {
         home: 'Home',
@@ -33,6 +35,20 @@ export const en = {
             failed: 'Sync failed',
             running: 'Syncing',
         },
+    },
+    session: {
+        disconnectedTitle: 'No session',
+        disconnectedBody:
+            'You can see the data saved on this computer. Connect to refresh it.',
+        expiredTitle: 'Session expired',
+        expiredBody:
+            '{{source}} needs a new session. Reconnect to refresh the data.',
+        partialTitle: 'Partial session',
+        partialBody: 'One source is not responding. Reconnect to refresh it.',
+        connectingTitle: 'Connecting',
+        connectingBody: 'Complete the login in the window that opened.',
+        connect: 'Connect',
+        reconnect: 'Reconnect',
     },
     onboarding: {
         tagline: 'Your courses, tasks, schedule and grades in one place.',
@@ -113,12 +129,18 @@ export const en = {
             pending: 'Pending',
             submitted: 'Submitted',
             graded: 'Graded',
+            no_data: 'No date',
+            unconfirmed: 'To confirm',
+            informational: 'Informational',
         },
         groups: {
             overdue: 'Overdue',
             pending: 'Pending',
             submitted: 'Submitted',
             graded: 'Graded',
+            no_data: 'No date',
+            unconfirmed: 'To confirm',
+            informational: 'Informational',
         },
     },
     resources: {

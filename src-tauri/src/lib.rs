@@ -4,6 +4,7 @@ pub mod commands;
 pub mod db;
 pub mod ellucian;
 pub mod error;
+pub mod events;
 pub mod http;
 pub mod moodle;
 pub mod state;
@@ -33,7 +34,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let handle = app.handle().clone();
-            let session = Arc::new(SessionManager::new(handle.clone()));
+            let emitter = tauri_emitter(handle.clone());
+            let session = Arc::new(SessionManager::new(
+                handle.clone(),
+                Some(Arc::clone(&emitter)),
+            ));
             session.spawn_health_loop(Duration::from_secs(15 * 60));
             app.manage(Arc::clone(&session));
 
@@ -51,17 +56,12 @@ pub fn run() {
                 banner: live.clone(),
                 repo: repo.clone(),
                 limiter: http.limiter(),
-                emitter: Some(tauri_emitter(handle.clone())),
+                emitter: Some(Arc::clone(&emitter)),
             }));
             sync.spawn_scheduler();
 
             let folder = downloads_folder(&data_dir);
-            let downloads = Downloads::new(
-                repo.clone(),
-                live,
-                folder,
-                Some(tauri_emitter(handle.clone())),
-            );
+            let downloads = Downloads::new(repo.clone(), live, folder, Some(emitter));
 
             app.manage(AppState::new(pool, repo, Arc::clone(&sync)));
             app.manage(sync);
@@ -81,10 +81,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::connect,
             commands::session_state,
+            commands::refresh_session,
             commands::start_sync,
             commands::cancel_sync,
             commands::sync_status,
             commands::get_dashboard,
+            commands::has_local_data,
             commands::list_courses,
             commands::get_course,
             commands::list_tasks,
@@ -92,6 +94,7 @@ pub fn run() {
             commands::list_grades,
             commands::get_schedule,
             commands::list_news,
+            commands::acknowledge,
             commands::search,
             commands::get_settings,
             commands::save_settings,
@@ -106,13 +109,13 @@ pub fn run() {
 
 fn downloads_folder(data_dir: &std::path::Path) -> PathBuf {
     std::env::var("USERPROFILE")
-        .map(|home| PathBuf::from(home).join("Downloads").join("PanelRamos"))
+        .map(|home| PathBuf::from(home).join("Downloads").join("rust-app"))
         .unwrap_or_else(|_| data_dir.join("downloads"))
 }
 
 /// The emitter lives in the binary: the lib does not import the Tauri symbols
 /// that drag WebView2 into the tests.
-fn tauri_emitter(app: AppHandle) -> sync::EventEmitter {
+fn tauri_emitter(app: AppHandle) -> events::EventEmitter {
     use tauri::Emitter;
     Arc::new(move |event: &str, payload: serde_json::Value| {
         let _ = app.emit(event, payload);

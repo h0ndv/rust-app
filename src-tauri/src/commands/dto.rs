@@ -10,6 +10,10 @@ pub enum TaskFilter {
     Pending,
     Submitted,
     Graded,
+    #[serde(rename = "no_data")]
+    NoData,
+    Unconfirmed,
+    Informational,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
@@ -19,6 +23,26 @@ pub enum ResourceFilter {
     All,
     New,
     Downloaded,
+}
+
+/// Entity kind behind a Novedades item. Typed at the command boundary so an
+/// unknown value can never reach the acknowledgement query.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NewsKind {
+    Announcement,
+    File,
+    Activity,
+}
+
+impl NewsKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NewsKind::Announcement => "announcement",
+            NewsKind::File => "file",
+            NewsKind::Activity => "activity",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -32,6 +56,7 @@ pub struct TaskDto {
     pub submitted: bool,
     pub grade: Option<f64>,
     pub url: Option<String>,
+    pub is_new: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]

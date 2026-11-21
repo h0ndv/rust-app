@@ -35,6 +35,11 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
                                 <span className="min-w-0 flex-1 truncate">
                                     {resource.title}
                                 </span>
+                                {resource.is_new ? (
+                                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                        {t('common.new')}
+                                    </span>
+                                ) : null}
                                 <span className="text-xs text-muted-foreground uppercase">
                                     {t(
                                         ITEM_KIND_KEY[

@@ -15,6 +15,7 @@ function task(overrides: Partial<TaskDto>): TaskDto {
         submitted: false,
         grade: null,
         url: null,
+        is_new: false,
         ...overrides,
     };
 }
@@ -39,4 +40,20 @@ test('shows an empty state when there are no tasks', () => {
     render(<Tasks tasks={[]} />);
 
     expect(screen.getByText(/no tasks match this filter/i)).toBeInTheDocument();
+});
+
+test('shows statuses outside the main groups', () => {
+    render(
+        <Tasks
+            tasks={[
+                task({
+                    status: 'informational',
+                    title: 'Course guide',
+                }),
+            ]}
+        />,
+    );
+
+    expect(screen.getByText('Informational')).toBeInTheDocument();
+    expect(screen.getByText('Course guide')).toBeInTheDocument();
 });

@@ -64,6 +64,53 @@ async fn downloads_dir_uses_setting_or_fallback() {
 }
 
 #[tokio::test]
+async fn acknowledge_marks_the_entity_and_event() {
+    let pool = test_pool().await;
+
+    sqlx::query(
+        "INSERT INTO courses (id, source, fullname)
+         VALUES ('moodle:1', 'moodle', 'Course')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        "INSERT INTO activities (id, course_id, name, modtype)
+         VALUES ('assign:1', 'moodle:1', 'Task', 'assign')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        "INSERT INTO events (id, kind, entity_id, created_at)
+         VALUES ('activity:assign:1', 'activity', 'assign:1', '2026-11-21T10:00:00Z')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    rust_app_lib::sync::acknowledge(&pool, "activity", "assign:1")
+        .await
+        .unwrap();
+
+    let activity: Option<String> =
+        sqlx::query_scalar("SELECT acknowledged_at FROM activities WHERE id = 'assign:1'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let event: Option<String> =
+        sqlx::query_scalar("SELECT acknowledged_at FROM events WHERE entity_id = 'assign:1'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+
+    assert!(activity.is_some());
+    assert!(event.is_some());
+}
+
+#[tokio::test]
 async fn creates_all_tables() {
     let pool = test_pool().await;
     for table in [

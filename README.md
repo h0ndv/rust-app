@@ -46,6 +46,6 @@ cd src-tauri; cargo test
 ## Data and privacy
 
 The database lives in `%APPDATA%\com.santotomas.rustapp\panel.db` and downloads go to
-`%USERPROFILE%\Downloads\PanelRamos`. Cookies stay in the WebView2 profile and are never
+`%USERPROFILE%\Downloads\rust-app`. Cookies stay in the WebView2 profile and are never
 copied into the database or the logs. There is no central server, no telemetry and no
 cloud account.

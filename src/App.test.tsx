@@ -1,12 +1,23 @@
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import App from './App';
 
-test('starts on the welcome screen', () => {
+vi.mock('@/lib/api', () => ({
+    api: {
+        hasLocalData: vi.fn().mockResolvedValue(false),
+        sessionState: vi.fn().mockResolvedValue({ state: 'disconnected' }),
+        refreshSession: vi.fn(),
+        connect: vi.fn(),
+        setLanguage: vi.fn(),
+    },
+}));
+
+test('starts on the welcome screen', async () => {
     render(<App />);
 
-    expect(screen.getByText('rust-app')).toBeInTheDocument();
+    expect(await screen.findByText('rust-app')).toBeInTheDocument();
     expect(
-        screen.getByRole('button', { name: /connect with microsoft/i }),
+        await screen.findByRole('button', { name: /connect with microsoft/i }),
     ).toBeInTheDocument();
 });

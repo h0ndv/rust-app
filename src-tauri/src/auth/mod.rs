@@ -12,11 +12,12 @@ use tokio::time::Instant;
 use url::Url;
 
 use crate::error::AppError;
+use crate::events::EventEmitter;
 use crate::http::HttpClient;
 
 pub const USER_AGENT: &str = concat!(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ",
-    "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 PanelRamos/0.1"
+    "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 rust-app/0.1"
 );
 
 pub const AUTH_WINDOW: &str = "auth";
@@ -139,20 +140,37 @@ pub struct SessionManager {
     http: HttpClient,
     state: Mutex<SessionState>,
     last_focus_check: Mutex<Instant>,
+    emitter: Option<EventEmitter>,
 }
 
 impl SessionManager {
-    pub fn new(app: AppHandle) -> Self {
+    pub fn new(app: AppHandle, emitter: Option<EventEmitter>) -> Self {
         Self {
             app,
             http: HttpClient::new(USER_AGENT),
             state: Mutex::new(SessionState::Disconnected),
             last_focus_check: Mutex::new(Instant::now()),
+            emitter,
         }
     }
 
     pub async fn state(&self) -> SessionState {
         self.state.lock().await.clone()
+    }
+
+    async fn set_state(&self, state: SessionState) {
+        *self.state.lock().await = state.clone();
+        self.emit(&state);
+    }
+
+    fn emit(&self, state: &SessionState) {
+        let Some(emitter) = &self.emitter else {
+            return;
+        };
+
+        if let Ok(payload) = serde_json::to_value(state) {
+            emitter("session://changed", payload);
+        }
     }
 
     pub fn app(&self) -> AppHandle {
@@ -173,21 +191,30 @@ impl SessionManager {
         }
 
         let state = SessionState::outcome(failed);
-        *self.state.lock().await = state.clone();
+        self.set_state(state.clone()).await;
         Ok(state)
     }
 
     pub async fn ensure(&self, source: Source) -> Result<(), AppError> {
         if self.health(source).await? {
+            let next = {
+                let current = self.state.lock().await;
+                current.clone().source_ok(source)
+            };
+            self.set_state(next).await;
             return Ok(());
         }
 
-        self.authenticate(source).await?;
+        if let Err(error) = self.authenticate(source).await {
+            self.set_state(SessionState::Partial).await;
+            return Err(error);
+        }
+
         let next = {
             let current = self.state.lock().await;
             current.clone().source_ok(source)
         };
-        *self.state.lock().await = next;
+        self.set_state(next).await;
         Ok(())
     }
 
@@ -206,6 +233,8 @@ impl SessionManager {
         if self.health(source).await.unwrap_or(false) {
             return Ok(());
         }
+
+        self.set_state(SessionState::Connecting(source)).await;
 
         let window = windows::open_auth_window(&self.app, source).await?;
 
@@ -236,13 +265,28 @@ impl SessionManager {
 
     pub async fn refresh_health(&self) -> SessionState {
         let mut down = Vec::new();
+        let mut unchecked = 0usize;
+
         for source in Source::ALL {
-            if !matches!(self.health(source).await, Ok(true)) {
-                down.push(source);
+            match self.health(source).await {
+                Ok(true) => {}
+                Ok(false) => down.push(source),
+                Err(error) => {
+                    // Not being able to read the cookies says nothing about the
+                    // session: a webview race or a dropped network must not turn
+                    // a live session into an expired one.
+                    unchecked += 1;
+                    tracing::debug!(source = source.as_str(), %error, "health check skipped");
+                }
             }
         }
 
         let previous = self.state.lock().await.clone();
+
+        if down.is_empty() && unchecked > 0 {
+            return previous;
+        }
+
         let next = if down.is_empty() {
             SessionState::Connected
         } else if down.len() < Source::ALL.len() {
@@ -256,7 +300,7 @@ impl SessionManager {
             }
         };
 
-        *self.state.lock().await = next.clone();
+        self.set_state(next.clone()).await;
         next
     }
 

@@ -38,6 +38,7 @@ export interface TaskDto {
     submitted: boolean;
     grade: number | null;
     url: string | null;
+    is_new: boolean;
 }
 
 export interface ResourceDto {
@@ -65,13 +66,15 @@ export interface ScheduleEventDto {
     instructor: string | null;
 }
 
+export type NewsKind = 'announcement' | 'file' | 'activity';
+
 export interface NewsItemDto {
     id: string;
     course: string | null;
     title: string;
     body: string;
     published_at: number | null;
-    kind: string;
+    kind: NewsKind;
 }
 
 export interface DashboardDto {
@@ -152,6 +155,7 @@ export interface ActivityRow {
     status: string | null;
     due_at: number | null;
     url: string | null;
+    acknowledged_at: string | null;
 }
 
 export interface FileRow {
@@ -190,19 +194,29 @@ export interface CourseDetailDto {
     schedule: ScheduleRow[];
 }
 
-export type TaskFilter = 'all' | 'overdue' | 'pending' | 'submitted' | 'graded';
+export type TaskFilter =
+    | 'all'
+    | 'overdue'
+    | 'pending'
+    | 'submitted'
+    | 'graded'
+    | 'no_data'
+    | 'unconfirmed'
+    | 'informational';
 export type ResourceFilter = 'all' | 'new' | 'downloaded';
 
 export const api = {
     connect: (source?: Source) =>
         invoke<SessionState>('connect', { source: source ?? null }),
     sessionState: () => invoke<SessionState>('session_state'),
+    refreshSession: () => invoke<SessionState>('refresh_session'),
 
     startSync: () => invoke<SyncStatus>('start_sync'),
     cancelSync: () => invoke<void>('cancel_sync'),
     syncStatus: () => invoke<SyncStatus>('sync_status'),
 
     getDashboard: () => invoke<DashboardDto>('get_dashboard'),
+    hasLocalData: () => invoke<boolean>('has_local_data'),
     listCourses: () => invoke<CourseGroupDto[]>('list_courses'),
     getCourse: (groupId: string) =>
         invoke<CourseDetailDto>('get_course', { groupId }),
@@ -214,6 +228,8 @@ export const api = {
         invoke<GradesDto>('list_grades', { term: term ?? null }),
     getSchedule: () => invoke<ScheduleEventDto[]>('get_schedule'),
     listNews: () => invoke<NewsItemDto[]>('list_news'),
+    acknowledge: (kind: NewsKind, id: string) =>
+        invoke<void>('acknowledge', { kind, id }),
     search: (query: string) => invoke<SearchResultsDto>('search', { query }),
 
     getSettings: () => invoke<SettingsDto>('get_settings'),

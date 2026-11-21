@@ -25,3 +25,10 @@ pub async fn session_state(
 ) -> Result<SessionState, AppError> {
     Ok(session.state().await)
 }
+
+#[tauri::command]
+pub async fn refresh_session(
+    session: State<'_, Arc<SessionManager>>,
+) -> Result<SessionState, AppError> {
+    Ok(session.refresh_health().await)
+}

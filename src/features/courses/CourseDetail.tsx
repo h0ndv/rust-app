@@ -47,6 +47,11 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                                 <span className="min-w-0 flex-1 truncate">
                                     {task.name}
                                 </span>
+                                {task.acknowledged_at === null ? (
+                                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                        {t('common.new')}
+                                    </span>
+                                ) : null}
                                 <span className="text-xs text-muted-foreground">
                                     {t(
                                         TASK_STATUS_KEY[

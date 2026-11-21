@@ -8,8 +8,9 @@ use crate::state::AppState;
 
 use super::Cmd;
 use super::dto::{
-    DashboardDto, GradeRowDto, GradeTotalDto, GradesDto, NewsItemDto, ResourceDto, ResourceFilter,
-    ScheduleEventDto, SearchHitDto, SearchResultsDto, SettingsDto, TaskDto, TaskFilter,
+    DashboardDto, GradeRowDto, GradeTotalDto, GradesDto, NewsItemDto, NewsKind, ResourceDto,
+    ResourceFilter, ScheduleEventDto, SearchHitDto, SearchResultsDto, SettingsDto, TaskDto,
+    TaskFilter,
 };
 
 fn fail(error: impl std::fmt::Display) -> AppError {
@@ -83,6 +84,7 @@ struct TaskRow {
     submitted: Option<bool>,
     grade: Option<f64>,
     url: Option<String>,
+    acknowledged_at: Option<String>,
 }
 
 #[derive(FromRow)]
@@ -131,6 +133,7 @@ struct TotalRow {
 
 #[derive(FromRow)]
 struct NewsRow {
+    kind: String,
     id: String,
     course_title: Option<String>,
     title: String,
@@ -150,6 +153,7 @@ impl From<TaskRow> for TaskDto {
             submitted: row.submitted.unwrap_or(false),
             grade: row.grade,
             url: row.url,
+            is_new: row.acknowledged_at.is_none(),
         }
     }
 }
@@ -190,7 +194,7 @@ impl From<ScheduleRow> for ScheduleEventDto {
 async fn load_tasks(state: &AppState) -> Cmd<Vec<TaskDto>> {
     let rows: Vec<TaskRow> = sqlx::query_as(
         "SELECT a.id, a.course_id, c.fullname AS course_fullname, a.name, a.due_at,
-                a.status, a.submitted, a.grade, a.url
+                a.status, a.submitted, a.grade, a.url, a.acknowledged_at
          FROM activities a
          JOIN courses c ON c.id = a.course_id
          WHERE a.archived_at IS NULL AND a.modtype IN ('assign', 'quiz')
@@ -279,6 +283,11 @@ pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
 }
 
 #[tauri::command]
+pub async fn has_local_data(state: State<'_, AppState>) -> Cmd<bool> {
+    Ok(state.repo.course_count().await? > 0)
+}
+
+#[tauri::command]
 pub async fn list_courses(state: State<'_, AppState>) -> Cmd<Vec<CourseGroupDto>> {
     state.repo.list_course_groups().await
 }
@@ -315,6 +324,9 @@ pub async fn list_tasks(state: State<'_, AppState>, filter: TaskFilter) -> Cmd<V
             TaskFilter::Pending => task.status.as_deref() == Some("pending"),
             TaskFilter::Submitted => task.submitted,
             TaskFilter::Graded => task.grade.is_some(),
+            TaskFilter::NoData => task.status.as_deref() == Some("no_data"),
+            TaskFilter::Unconfirmed => task.status.as_deref() == Some("unconfirmed"),
+            TaskFilter::Informational => task.status.as_deref() == Some("informational"),
         })
         .collect())
 }
@@ -409,17 +421,30 @@ pub async fn get_schedule(state: State<'_, AppState>) -> Cmd<Vec<ScheduleEventDt
 #[tauri::command]
 pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
     let rows: Vec<NewsRow> = sqlx::query_as(
-        "SELECT a.id, c.fullname AS course_title, a.title, a.body, a.published_at
+        "SELECT 'announcement' AS kind, a.id, c.fullname AS course_title, a.title, a.body,
+                a.published_at
          FROM announcements a
          LEFT JOIN courses c ON c.id = a.course_id
-         ORDER BY COALESCE(a.published_at, 0) DESC
+         WHERE a.acknowledged_at IS NULL
+         UNION ALL
+         SELECT 'file', f.id, c.fullname, f.name, '', NULL
+         FROM files f
+         LEFT JOIN courses c ON c.id = f.course_id
+         WHERE f.acknowledged_at IS NULL AND f.archived_at IS NULL
+         UNION ALL
+         SELECT 'activity', a.id, c.fullname, a.name, a.description, a.due_at
+         FROM activities a
+         LEFT JOIN courses c ON c.id = a.course_id
+         WHERE a.acknowledged_at IS NULL AND a.archived_at IS NULL
+           AND a.modtype IN ('assign', 'quiz')
+         ORDER BY published_at DESC
          LIMIT 100",
     )
     .fetch_all(&state.pool)
     .await
     .map_err(fail)?;
 
-    let mut items: Vec<NewsItemDto> = rows
+    Ok(rows
         .into_iter()
         .map(|row| NewsItemDto {
             id: row.id,
@@ -427,26 +452,14 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
             title: row.title,
             body: row.body,
             published_at: row.published_at,
-            kind: "announcement".into(),
+            kind: row.kind,
         })
-        .collect();
+        .collect())
+}
 
-    for resource in load_resources(&state)
-        .await?
-        .into_iter()
-        .filter(|r| r.is_new)
-    {
-        items.push(NewsItemDto {
-            id: resource.id,
-            course: resource.course,
-            title: resource.title,
-            body: String::new(),
-            published_at: None,
-            kind: "resource".into(),
-        });
-    }
-
-    Ok(items)
+#[tauri::command]
+pub async fn acknowledge(state: State<'_, AppState>, kind: NewsKind, id: String) -> Cmd<()> {
+    crate::sync::acknowledge(&state.pool, kind.as_str(), &id).await
 }
 
 #[tauri::command]
@@ -514,7 +527,7 @@ pub async fn get_settings(state: State<'_, AppState>) -> Cmd<SettingsDto> {
 
     if settings.downloads_dir.is_empty() {
         settings.downloads_dir = std::env::var("USERPROFILE")
-            .map(|home| format!("{home}\\Downloads\\PanelRamos"))
+            .map(|home| format!("{home}\\Downloads\\rust-app"))
             .unwrap_or_default();
     }
 

@@ -63,6 +63,7 @@ keeps the UI replaceable.
 | `src-tauri/src/lib.rs`    | Builder, setup, DB bootstrap, command registry                             |
 | `src-tauri/src/state.rs`  | `AppState { pool, repo, sync }`                                            |
 | `src-tauri/src/error.rs`  | `AppError` with `kind` and a technical message                             |
+| `src-tauri/src/events.rs` | Injected event emitter type shared by auth, sync and downloads             |
 | `src-tauri/src/http/`     | `HttpClient` (timeout, 4 in flight), `RateLimiter` (6/s, 600/run)          |
 | `src-tauri/src/auth/`     | `Source`, `SessionState`, `SessionManager`, login windows, cookies, health |
 | `src-tauri/src/moodle/`   | AJAX client, HTML/JSON parsers, models                                     |
@@ -122,7 +123,9 @@ expiry date**. WebView2 drops them when the process ends, so every app restart s
 without a session. The Microsoft cookies do survive (`ESTSAUTHPERSISTENT`,
 `AADSSOTILES`), which makes reconnection a click with no password and no MFA.
 
-The app must treat "no session" as a normal startup state, not as an error.
+The app must treat "no session" as a normal startup state, not as an error. Every session
+transition emits `session://changed` through the injected emitter. The app opens with the
+cached snapshot and a reconnect banner; onboarding is only the first run with no local data.
 
 ### Health
 
@@ -211,19 +214,24 @@ appear under the same card with two sections.
 
 ## 10. Commands and DTOs
 
-`commands/` exposes 20 commands. Reads return DTOs from `commands/dto.rs`; the UI never
+`commands/` exposes 23 commands. Reads return DTOs from `commands/dto.rs`; the UI never
 sees database models.
 
-| Group    | Commands                                                                                                                            |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Session  | `connect(source?)`, `session_state`                                                                                                 |
-| Sync     | `start_sync`, `cancel_sync`, `sync_status`                                                                                          |
-| Reads    | `get_dashboard`, `list_courses`, `get_course`, `list_tasks`, `list_resources`, `list_grades`, `get_schedule`, `list_news`, `search` |
-| Settings | `get_settings`, `save_settings`, `set_language`                                                                                     |
-| Actions  | `open_in_app`, `download_file`, `clear_data`                                                                                        |
+| Group    | Commands                                                                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session  | `connect(source?)`, `session_state`, `refresh_session`                                                                                                |
+| Sync     | `start_sync`, `cancel_sync`, `sync_status`                                                                                                            |
+| Reads    | `get_dashboard`, `has_local_data`, `list_courses`, `get_course`, `list_tasks`, `list_resources`, `list_grades`, `get_schedule`, `list_news`, `search` |
+| Settings | `get_settings`, `save_settings`, `set_language`                                                                                                       |
+| Actions  | `acknowledge`, `open_in_app`, `download_file`, `clear_data`                                                                                           |
 
 Filters (`TaskFilter`, `ResourceFilter`) travel lowercase so the JSON stays
-`"overdue"`, `"new"`.
+`"overdue"`, `"new"`. `no_data` is spelled out in the enum because the lowercase rename
+would produce `nodata`.
+
+Novedades reads unread rows straight from `activities`, `files` and `announcements`;
+`acknowledge` updates the entity and the `events` novelty log in one call, and the UI
+invalidates its queries so the badge clears on every screen.
 
 The interface language lives in `settings.language` and defaults to `"en"`. UI copy lives
 in `src/i18n/locales`; Rust sends stable English codes and serialized `AppError` objects
@@ -235,8 +243,8 @@ The other settings are read where they are used: the scheduler reads
 `settings.downloads_dir` for each item, the frontend applies `settings.theme` at boot and
 on save, and notifications honor `settings.notifications`.
 
-Events emitted to the UI: `sync://progress`, `sync://finished`, `download://finished`,
-`download://error`.
+Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finished`,
+`download://finished`, `download://error`.
 
 ## 11. Decisions and tradeoffs
 

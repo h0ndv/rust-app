@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { api, type NewsItemDto } from '@/lib/api';
@@ -8,6 +9,20 @@ import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function News({ items }: { items: NewsItemDto[] }) {
     const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const [busy, setBusy] = useState<string | null>(null);
+
+    async function markRead(item: NewsItemDto): Promise<void> {
+        setBusy(item.id);
+        try {
+            await api.acknowledge(item.kind, item.id);
+            await queryClient.invalidateQueries();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setBusy(null);
+        }
+    }
 
     if (items.length === 0) {
         return <EmptyNote>{t('news.empty')}</EmptyNote>;
@@ -35,6 +50,16 @@ export function News({ items }: { items: NewsItemDto[] }) {
                             {item.body}
                         </p>
                     ) : null}
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            className="text-xs text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                            disabled={busy === item.id}
+                            onClick={() => void markRead(item)}
+                        >
+                            {t('common.markRead')}
+                        </button>
+                    </div>
                 </li>
             ))}
         </ul>

@@ -12,6 +12,12 @@ const GROUPS = [
     { status: 'pending', labelKey: 'tasks.groups.pending' as const },
     { status: 'submitted', labelKey: 'tasks.groups.submitted' as const },
     { status: 'graded', labelKey: 'tasks.groups.graded' as const },
+    { status: 'no_data', labelKey: 'tasks.groups.no_data' as const },
+    { status: 'unconfirmed', labelKey: 'tasks.groups.unconfirmed' as const },
+    {
+        status: 'informational',
+        labelKey: 'tasks.groups.informational' as const,
+    },
 ];
 
 const FILTERS: {
@@ -21,13 +27,19 @@ const FILTERS: {
         | 'tasks.filters.overdue'
         | 'tasks.filters.pending'
         | 'tasks.filters.submitted'
-        | 'tasks.filters.graded';
+        | 'tasks.filters.graded'
+        | 'tasks.filters.no_data'
+        | 'tasks.filters.unconfirmed'
+        | 'tasks.filters.informational';
 }[] = [
     { value: 'all', labelKey: 'tasks.filters.all' },
     { value: 'overdue', labelKey: 'tasks.filters.overdue' },
     { value: 'pending', labelKey: 'tasks.filters.pending' },
     { value: 'submitted', labelKey: 'tasks.filters.submitted' },
     { value: 'graded', labelKey: 'tasks.filters.graded' },
+    { value: 'no_data', labelKey: 'tasks.filters.no_data' },
+    { value: 'unconfirmed', labelKey: 'tasks.filters.unconfirmed' },
+    { value: 'informational', labelKey: 'tasks.filters.informational' },
 ];
 
 function TaskRow({ task }: { task: TaskDto }) {
@@ -37,7 +49,14 @@ function TaskRow({ task }: { task: TaskDto }) {
     return (
         <li className="flex flex-wrap items-center gap-3 p-3">
             <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-medium">{task.title}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-medium">{task.title}</span>
+                    {task.is_new ? (
+                        <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {t('common.new')}
+                        </span>
+                    ) : null}
+                </span>
                 <span className="truncate text-xs text-muted-foreground">
                     {task.course_name}
                 </span>

@@ -55,6 +55,7 @@ const dashboard: DashboardDto = {
             submitted: false,
             grade: null,
             url: null,
+            is_new: false,
         },
     ],
     due_soon: [],

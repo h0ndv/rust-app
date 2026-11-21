@@ -65,7 +65,7 @@ All four green. A failing test you did not cause still gets reported by name.
 - Sync tests use fake sources (`tests/sync_orchestrator.rs`) and an in-memory database.
 - Frontend tests use Vitest with `jsdom`.
 
-Current totals: 70 Rust tests and 28 frontend tests.
+Current totals: 77 Rust tests and 46 frontend tests.
 
 ## 7. Conventions
 
@@ -101,7 +101,7 @@ reason.
 | What      | Where                                                  |
 | --------- | ------------------------------------------------------ |
 | Database  | `%APPDATA%\com.santotomas.rustapp\panel.db` (WAL mode) |
-| Downloads | `%USERPROFILE%\Downloads\PanelRamos`                   |
+| Downloads | `%USERPROFILE%\Downloads\rust-app`                     |
 | Cookies   | WebView2 profile, never copied out                     |
 | Logs      | stderr; `tracing` honours `RUST_LOG`                   |
 
@@ -109,8 +109,9 @@ reason.
 
 **Working:** desktop shell, SQLite schema, HTTP client with rate limiting, the three
 source adapters, course linking, the sync orchestrator, the commands the UI consumes,
-the onboarding with per-source connection, the ten data screens and the English/Spanish
-interface.
+the onboarding with per-source connection, cached startup with a reconnect banner,
+Novedades with acknowledgment and all task statuses, the ten data screens, the
+English/Spanish interface and the persisted settings.
 
 **Missing:** the Windows installer with updates, and the end-to-end checklist on a
 clean machine.

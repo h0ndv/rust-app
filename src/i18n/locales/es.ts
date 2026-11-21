@@ -10,6 +10,8 @@ export const es: Catalog = {
         retry: 'Reintentar',
         continue: 'Continuar',
         cancel: 'Cancelar',
+        new: 'Nuevo',
+        markRead: 'Marcar como leído',
     },
     nav: {
         home: 'Inicio',
@@ -35,6 +37,21 @@ export const es: Catalog = {
             failed: 'Falló la sincronización',
             running: 'Sincronizando',
         },
+    },
+    session: {
+        disconnectedTitle: 'Sin sesión',
+        disconnectedBody:
+            'Puedes ver los datos guardados en este computador. Conecta para actualizarlos.',
+        expiredTitle: 'Sesión vencida',
+        expiredBody:
+            '{{source}} necesita una sesión nueva. Reconecta para actualizar los datos.',
+        partialTitle: 'Sesión parcial',
+        partialBody:
+            'Una fuente no está respondiendo. Reconecta para actualizarla.',
+        connectingTitle: 'Conectando',
+        connectingBody: 'Completa el login en la ventana que se abrió.',
+        connect: 'Conectar',
+        reconnect: 'Reconectar',
     },
     onboarding: {
         tagline: 'Tus ramos, tareas, horario y notas en un solo lugar.',
@@ -114,12 +131,18 @@ export const es: Catalog = {
             pending: 'Pendientes',
             submitted: 'Entregadas',
             graded: 'Calificadas',
+            no_data: 'Sin fecha',
+            unconfirmed: 'Por confirmar',
+            informational: 'Informativas',
         },
         groups: {
             overdue: 'Atrasadas',
             pending: 'Pendientes',
             submitted: 'Entregadas',
             graded: 'Calificadas',
+            no_data: 'Sin fecha',
+            unconfirmed: 'Por confirmar',
+            informational: 'Informativas',
         },
     },
     resources: {
