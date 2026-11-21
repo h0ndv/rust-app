@@ -63,7 +63,7 @@ impl Downloads {
     pub fn new(
         repo: Repo,
         moodle: Arc<dyn MoodleSource>,
-        folder: PathBuf,
+        fallback: PathBuf,
         emitter: Option<crate::sync::EventEmitter>,
     ) -> Self {
         let (sender, mut receiver) = mpsc::unbounded_channel::<String>();
@@ -76,6 +76,14 @@ impl Downloads {
                     break;
                 }
 
+                let folder = repo.downloads_dir(&fallback).await.unwrap_or_else(|error| {
+                    tracing::warn!(
+                        %error,
+                        "could not read the downloads folder; using the fallback"
+                    );
+                    fallback.clone()
+                });
+
                 let result = download_one(&repo, moodle.as_ref(), &folder, &file_id).await;
                 match result {
                     Ok(path) => {
@@ -83,10 +91,10 @@ impl Downloads {
                             .mark_downloaded(&file_id, &path.display().to_string())
                             .await;
                         emit(&emitter, "download://finished", &file_id);
-                        tracing::debug!(file = %file_id, "descarga lista");
+                        tracing::debug!(file = %file_id, "download ready");
                     }
                     Err(error) => {
-                        tracing::warn!(file = %file_id, %error, "descarga fallida");
+                        tracing::warn!(file = %file_id, %error, "download failed");
                         emit(&emitter, "download://error", &file_id);
                     }
                 }

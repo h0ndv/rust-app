@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use serde::Serialize;
 use sqlx::SqlitePool;
 
@@ -89,6 +91,36 @@ impl Repo {
             .fetch_one(&self.pool)
             .await
             .map_err(|e| AppError::Internal(format!("no se pudo contar cursos: {e}")))
+    }
+
+    pub async fn sync_interval_minutes(&self) -> Result<u64, AppError> {
+        let value: Option<String> = sqlx::query_scalar("SELECT value FROM settings WHERE key = ?")
+            .bind("sync_interval_minutes")
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| AppError::Internal(format!("no se pudo leer el intervalo: {e}")))?;
+
+        Ok(value
+            .and_then(|value| value.trim().parse::<u64>().ok())
+            .unwrap_or(30)
+            .clamp(5, 24 * 60))
+    }
+
+    pub async fn downloads_dir(&self, fallback: &Path) -> Result<PathBuf, AppError> {
+        let value: Option<String> = sqlx::query_scalar("SELECT value FROM settings WHERE key = ?")
+            .bind("downloads_dir")
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| AppError::Internal(format!("no se pudo leer la carpeta: {e}")))?;
+
+        let value = value.unwrap_or_default();
+        let value = value.trim();
+
+        if value.is_empty() {
+            Ok(fallback.to_path_buf())
+        } else {
+            Ok(PathBuf::from(value))
+        }
     }
 
     pub async fn upsert_course(&self, course: &Course) -> Result<(), AppError> {

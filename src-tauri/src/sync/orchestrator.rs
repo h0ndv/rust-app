@@ -33,6 +33,7 @@ pub struct SyncOrchestrator {
     cancel: Mutex<CancellationToken>,
     force_failure: Mutex<Option<Source>>,
     running: AtomicBool,
+    last_run: Mutex<Option<std::time::Instant>>,
 }
 
 impl SyncOrchestrator {
@@ -49,6 +50,7 @@ impl SyncOrchestrator {
             cancel: Mutex::new(CancellationToken::new()),
             force_failure: Mutex::new(None),
             running: AtomicBool::new(false),
+            last_run: Mutex::new(Some(std::time::Instant::now())),
         }
     }
 
@@ -112,7 +114,13 @@ impl SyncOrchestrator {
     }
 
     async fn execute(&self, trigger: SyncTrigger) -> Result<SyncRun, AppError> {
-        match self.run_inner(trigger).await {
+        let result = self.run_inner(trigger).await;
+
+        if let Ok(mut last) = self.last_run.lock() {
+            *last = Some(std::time::Instant::now());
+        }
+
+        match result {
             Ok(run) => Ok(run),
             Err(error) => {
                 let now = Utc::now().to_rfc3339();
@@ -159,17 +167,35 @@ impl SyncOrchestrator {
         result
     }
 
-    /// Every 30 minutes while the app is open. The first tick is
-    /// immediate, so it is discarded to avoid syncing at startup.
-    pub fn spawn_scheduled(self: &Arc<Self>, every: Duration) {
+    /// One-minute heartbeat: reads the interval from the settings and runs when
+    /// the elapsed time since the last run reaches it.
+    pub fn spawn_scheduler(self: &Arc<Self>) {
         let this = Arc::clone(self);
+
         tauri::async_runtime::spawn(async move {
-            let mut ticker = tokio::time::interval(every);
+            let mut ticker = tokio::time::interval(Duration::from_secs(60));
             ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
             ticker.tick().await;
 
             loop {
                 ticker.tick().await;
+
+                let minutes = this.deps.repo.sync_interval_minutes().await.unwrap_or(30);
+                let interval = Duration::from_secs(minutes.saturating_mul(60));
+                let due = this
+                    .last_run
+                    .lock()
+                    .map(|last| {
+                        last.as_ref()
+                            .map(|value| value.elapsed() >= interval)
+                            .unwrap_or(true)
+                    })
+                    .unwrap_or(true);
+
+                if !due {
+                    continue;
+                }
+
                 if let Err(error) = this.run(SyncTrigger::Scheduled).await {
                     tracing::warn!(%error, "scheduled sync failed");
                 }

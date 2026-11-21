@@ -154,6 +154,15 @@ export const en = {
         subtitle: 'Forum announcements and resources you have not opened.',
         empty: 'No news. No course published new announcements or left resources unopened.',
     },
+    notifications: {
+        title: 'Pending work',
+        overdue: '{{count}} overdue task',
+        overdue_one: '{{count}} overdue task',
+        overdue_other: '{{count}} overdue tasks',
+        dueSoon: '{{count}} due soon',
+        dueSoon_one: '{{count}} task due soon',
+        dueSoon_other: '{{count}} tasks due soon',
+    },
     search: {
         title: 'Search',
         subtitle: 'Courses, tasks, resources and announcements.',
@@ -175,6 +184,7 @@ export const en = {
             dark: 'Dark',
         },
         notifications: 'Notify me about due dates',
+        notificationsDenied: 'Notifications are blocked by the system.',
         save: 'Save',
         saved: 'Settings saved.',
         saveFailed: 'Could not save settings.',

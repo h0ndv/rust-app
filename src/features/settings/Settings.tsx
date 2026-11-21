@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSelect } from '@/components/language-select';
 import i18n, { resolveLanguage } from '@/i18n';
 import { api, type SettingsDto } from '@/lib/api';
+import { ensureNotificationPermission } from '@/lib/notifications';
+import { normalizeTheme, setTheme } from '@/lib/theme';
 
 import { Loading, Screen } from '../common/Screen';
 
@@ -18,6 +20,7 @@ type Status =
     | { kind: 'saved' }
     | { kind: 'save_failed' }
     | { kind: 'clear_failed' }
+    | { kind: 'notifications_denied' }
     | { kind: 'cleared'; count: number }
     | null;
 
@@ -25,6 +28,7 @@ const STATUS_KEY = {
     saved: 'settings.saved',
     save_failed: 'settings.saveFailed',
     clear_failed: 'settings.clearFailed',
+    notifications_denied: 'settings.notificationsDenied',
 } as const;
 
 export function SettingsScreen() {
@@ -40,7 +44,11 @@ export function SettingsScreen() {
 
     useEffect(() => {
         if (data && form === null) {
-            setForm({ ...data, language: resolveLanguage(data.language) });
+            setForm({
+                ...data,
+                language: resolveLanguage(data.language),
+                theme: normalizeTheme(data.theme),
+            });
         }
     }, [data, form]);
 
@@ -53,7 +61,14 @@ export function SettingsScreen() {
             queryClient.setQueryData(['settings'], form);
             await i18n.changeLanguage(form.language);
             document.documentElement.lang = form.language;
-            setStatus({ kind: 'saved' });
+            setTheme(form.theme);
+
+            const allowed = form.notifications
+                ? await ensureNotificationPermission().catch(() => false)
+                : true;
+            setStatus(
+                allowed ? { kind: 'saved' } : { kind: 'notifications_denied' },
+            );
         } catch (cause) {
             console.error(cause);
             setStatus({ kind: 'save_failed' });

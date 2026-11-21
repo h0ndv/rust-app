@@ -53,7 +53,7 @@ pub fn run() {
                 limiter: http.limiter(),
                 emitter: Some(tauri_emitter(handle.clone())),
             }));
-            sync.spawn_scheduled(Duration::from_secs(30 * 60));
+            sync.spawn_scheduler();
 
             let folder = downloads_folder(&data_dir);
             let downloads = Downloads::new(

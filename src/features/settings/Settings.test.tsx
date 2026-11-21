@@ -19,7 +19,7 @@ const settings = {
     sync_interval_minutes: 30,
     downloads_dir: 'C:\\Downloads',
     theme: 'system',
-    notifications: true,
+    notifications: false,
     language: 'en',
 };
 

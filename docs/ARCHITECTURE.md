@@ -230,6 +230,11 @@ in `src/i18n/locales`; Rust sends stable English codes and serialized `AppError`
 (`{ kind, message }`). Adding a language is a frontend-only change: a catalog and a
 `LANGUAGES` entry with its `Intl` locale; `supportedLngs` and the resource map are derived.
 
+The other settings are read where they are used: the scheduler reads
+`settings.sync_interval_minutes` every minute, the download worker reads
+`settings.downloads_dir` for each item, the frontend applies `settings.theme` at boot and
+on save, and notifications honor `settings.notifications`.
+
 Events emitted to the UI: `sync://progress`, `sync://finished`, `download://finished`,
 `download://error`.
 

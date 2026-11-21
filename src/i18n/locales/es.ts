@@ -154,6 +154,15 @@ export const es: Catalog = {
         subtitle: 'Anuncios de los foros y recursos que no has abierto.',
         empty: 'Sin novedades. Ningún curso publicó anuncios nuevos ni dejó recursos sin abrir.',
     },
+    notifications: {
+        title: 'Trabajo pendiente',
+        overdue: '{{count}} atrasada',
+        overdue_one: '{{count}} atrasada',
+        overdue_other: '{{count}} atrasadas',
+        dueSoon: '{{count}} por vencer',
+        dueSoon_one: '{{count}} por vencer',
+        dueSoon_other: '{{count}} por vencer',
+    },
     search: {
         title: 'Buscador',
         subtitle: 'Ramos, tareas, recursos y anuncios.',
@@ -175,6 +184,7 @@ export const es: Catalog = {
             dark: 'Oscuro',
         },
         notifications: 'Avisar de vencimientos',
+        notificationsDenied: 'El sistema bloqueó las notificaciones.',
         save: 'Guardar',
         saved: 'Ajustes guardados.',
         saveFailed: 'No se pudieron guardar los ajustes.',

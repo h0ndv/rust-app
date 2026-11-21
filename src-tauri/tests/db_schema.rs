@@ -11,6 +11,59 @@ async fn test_pool() -> sqlx::SqlitePool {
 }
 
 #[tokio::test]
+async fn sync_interval_defaults_and_clamps() {
+    let pool = test_pool().await;
+    let repo = Repo::new(pool.clone());
+
+    assert_eq!(repo.sync_interval_minutes().await.unwrap(), 30);
+
+    for (value, expected) in [("5", 5), ("0", 5), ("nope", 30), ("99999", 1440)] {
+        sqlx::query(
+            "INSERT INTO settings (key, value) VALUES ('sync_interval_minutes', ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        )
+        .bind(value)
+        .execute(&pool)
+        .await
+        .unwrap();
+        assert_eq!(repo.sync_interval_minutes().await.unwrap(), expected);
+    }
+}
+
+#[tokio::test]
+async fn downloads_dir_uses_setting_or_fallback() {
+    let pool = test_pool().await;
+    let repo = Repo::new(pool.clone());
+    let fallback = std::path::Path::new("C:\\fallback");
+
+    assert_eq!(
+        repo.downloads_dir(fallback).await.unwrap(),
+        fallback.to_path_buf()
+    );
+
+    sqlx::query(
+        "INSERT INTO settings (key, value) VALUES ('downloads_dir', 'C:\\chosen')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        repo.downloads_dir(fallback).await.unwrap(),
+        std::path::PathBuf::from("C:\\chosen")
+    );
+
+    sqlx::query("UPDATE settings SET value = '   ' WHERE key = 'downloads_dir'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        repo.downloads_dir(fallback).await.unwrap(),
+        fallback.to_path_buf()
+    );
+}
+
+#[tokio::test]
 async fn creates_all_tables() {
     let pool = test_pool().await;
     for table in [

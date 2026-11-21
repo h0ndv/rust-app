@@ -33,6 +33,7 @@ import {
 import { LANGUAGES } from '@/i18n';
 
 import { SyncBadge } from './SyncBadge';
+import { useDueNotifications } from './use-notifications';
 import { useSyncController } from './use-sync';
 
 const NAV = [
@@ -68,6 +69,7 @@ const SOURCE_LABEL = {
 export function AppShell({ children }: AppShellProps) {
     const { t, i18n } = useTranslation();
     const sync = useSyncController();
+    useDueNotifications();
     const syncing = sync.state === 'running';
     const locale =
         LANGUAGES.find((language) => language.code === i18n.language)?.locale ??
