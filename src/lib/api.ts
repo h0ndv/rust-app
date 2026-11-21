@@ -198,7 +198,7 @@ export const api = {
         invoke<SessionState>('connect', { source: source ?? null }),
     sessionState: () => invoke<SessionState>('session_state'),
 
-    startSync: () => invoke<SyncRun>('start_sync'),
+    startSync: () => invoke<SyncStatus>('start_sync'),
     cancelSync: () => invoke<void>('cancel_sync'),
     syncStatus: () => invoke<SyncStatus>('sync_status'),
 

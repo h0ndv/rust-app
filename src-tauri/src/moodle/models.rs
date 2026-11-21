@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::error::AppError;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MoodleCourse {
     pub id: i64,
@@ -50,6 +52,11 @@ pub struct MoodleAnnouncement {
     pub body: String,
     pub url: Option<String>,
     pub published_at: Option<i64>,
+}
+
+pub struct MoodleCourseContent {
+    pub sections: Vec<MoodleSection>,
+    pub announcements: Result<Vec<MoodleAnnouncement>, AppError>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -71,6 +71,82 @@ impl SyncOrchestrator {
         }
     }
 
+    fn try_begin(&self) -> bool {
+        !self.running.swap(true, Ordering::SeqCst)
+    }
+
+    fn end(&self) {
+        self.running.store(false, Ordering::SeqCst);
+    }
+
+    /// Starts a run without waiting for it. The returned snapshot is the
+    /// initial `running` state; the rest arrives through the events.
+    pub fn start(self: &Arc<Self>, trigger: SyncTrigger) -> SyncStatus {
+        if !self.try_begin() {
+            return self.status();
+        }
+
+        self.publish(0, None, Vec::new());
+        let status = self.status();
+        let this = Arc::clone(self);
+
+        let _task = tauri::async_runtime::spawn(async move {
+            if let Err(error) = this.execute(trigger).await {
+                tracing::warn!(%error, "manual sync failed");
+            }
+            this.end();
+        });
+
+        status
+    }
+
+    pub async fn run(&self, trigger: SyncTrigger) -> Result<SyncRun, AppError> {
+        if !self.try_begin() {
+            return Err(AppError::Internal(
+                "ya hay una sincronización en curso".into(),
+            ));
+        }
+        let result = self.execute(trigger).await;
+        self.end();
+        result
+    }
+
+    async fn execute(&self, trigger: SyncTrigger) -> Result<SyncRun, AppError> {
+        match self.run_inner(trigger).await {
+            Ok(run) => Ok(run),
+            Err(error) => {
+                let now = Utc::now().to_rfc3339();
+                let run = SyncRun {
+                    id: Uuid::new_v4().to_string(),
+                    status: SyncStatusKind::Failed,
+                    requests: self.deps.limiter.count(),
+                    started_at: now.clone(),
+                    finished_at: Some(now),
+                };
+                self.publish_final(
+                    SyncStatusKind::Failed,
+                    self.deps.limiter.count(),
+                    vec![error.to_string()],
+                );
+                self.emit(SyncEvent::Finished(run.clone()));
+                Err(error)
+            }
+        }
+    }
+
+    fn publish_final(&self, state: SyncStatusKind, requests: u32, errors: Vec<String>) {
+        let status = SyncStatus {
+            state,
+            source: None,
+            progress: 100,
+            requests,
+            errors,
+        };
+        if let Ok(mut guard) = self.status.lock() {
+            *guard = status;
+        }
+    }
+
     /// Test seam: forces the failure of a source without touching the clients.
     pub async fn run_with_failure(&self, source: Source) -> Result<SyncRun, AppError> {
         if let Ok(mut forced) = self.force_failure.lock() {
@@ -80,17 +156,6 @@ impl SyncOrchestrator {
         if let Ok(mut forced) = self.force_failure.lock() {
             *forced = None;
         }
-        result
-    }
-
-    pub async fn run(&self, trigger: SyncTrigger) -> Result<SyncRun, AppError> {
-        if self.running.swap(true, Ordering::SeqCst) {
-            return Err(AppError::Internal(
-                "ya hay una sincronización en curso".into(),
-            ));
-        }
-        let result = self.run_inner(trigger).await;
-        self.running.store(false, Ordering::SeqCst);
         result
     }
 
@@ -106,7 +171,7 @@ impl SyncOrchestrator {
             loop {
                 ticker.tick().await;
                 if let Err(error) = this.run(SyncTrigger::Scheduled).await {
-                    tracing::warn!(%error, "la sincronización programada falló");
+                    tracing::warn!(%error, "scheduled sync failed");
                 }
             }
         });
@@ -114,6 +179,7 @@ impl SyncOrchestrator {
 
     async fn run_inner(&self, _trigger: SyncTrigger) -> Result<SyncRun, AppError> {
         let started_at = Utc::now().to_rfc3339();
+        let run_started = std::time::Instant::now();
         let run_id = Uuid::new_v4().to_string();
         let token = self.fresh_token();
         let repo = &self.deps.repo;
@@ -287,7 +353,7 @@ impl SyncOrchestrator {
 
         match diff::archive_stale(repo.pool(), Utc::now()).await {
             Ok(0) => {}
-            Ok(archived) => tracing::debug!(archived, "elementos archivados"),
+            Ok(archived) => tracing::debug!(archived, "archived stale items"),
             Err(error) => errors.push(format!("archivado: {error}")),
         }
 
@@ -322,10 +388,16 @@ impl SyncOrchestrator {
         };
 
         if let Err(error) = repo.optimize().await {
-            tracing::warn!(%error, "no se pudo optimizar la base tras la corrida");
+            tracing::warn!(%error, "could not optimize the database after the sync");
         }
 
-        self.publish(100, None, errors);
+        tracing::info!(
+            requests,
+            elapsed_ms = run_started.elapsed().as_millis() as u64,
+            "sync finished"
+        );
+
+        self.publish_final(state, requests, errors);
         self.emit(SyncEvent::Finished(run.clone()));
 
         Ok(run)
@@ -343,10 +415,11 @@ impl SyncOrchestrator {
         let course_row_id = format!("moodle:{}", course.id);
         let baseline = diff::is_baseline(repo.pool(), &course_row_id).await?;
         let now = Utc::now().to_rfc3339();
+        let started = std::time::Instant::now();
 
-        let sections = self.deps.moodle.sections(course.id).await?;
+        let content = self.deps.moodle.course_content(course.id).await?;
 
-        for (index, section) in sections.iter().enumerate() {
+        for (index, section) in content.sections.iter().enumerate() {
             let section_row_id = format!("{course_row_id}:{}", section.id);
             repo.upsert_section(&crate::db::models::Section {
                 id: section_row_id.clone(),
@@ -374,7 +447,7 @@ impl SyncOrchestrator {
             }
         }
 
-        match self.deps.moodle.announcements(course.id).await {
+        match content.announcements {
             Ok(items) => {
                 for item in items {
                     let id = match item.id {
@@ -422,6 +495,12 @@ impl SyncOrchestrator {
                 Err(error) => errors.push(format!("moodle total {}: {error}", course.id)),
             }
         }
+
+        tracing::debug!(
+            course_id = course.id,
+            elapsed_ms = started.elapsed().as_millis() as u64,
+            "course synced"
+        );
 
         Ok(())
     }

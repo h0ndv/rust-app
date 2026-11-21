@@ -4,6 +4,7 @@ src-tauri
 public
 bun.lock
 package-lock.json
+.agents
 src/components/ui/*
 src/hooks/use-composer-editor.ts
 src/hooks/use-media-query.ts

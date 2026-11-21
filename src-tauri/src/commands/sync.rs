@@ -1,12 +1,11 @@
 use tauri::State;
 
-use crate::error::AppError;
 use crate::state::AppState;
-use crate::sync::{SyncRun, SyncStatus, SyncTrigger};
+use crate::sync::{SyncStatus, SyncTrigger};
 
 #[tauri::command]
-pub async fn start_sync(state: State<'_, AppState>) -> Result<SyncRun, AppError> {
-    state.sync.run(SyncTrigger::Manual).await
+pub fn start_sync(state: State<'_, AppState>) -> SyncStatus {
+    state.sync.start(SyncTrigger::Manual)
 }
 
 #[tauri::command]

@@ -4,12 +4,14 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
 
+use futures::stream::{self, StreamExt, TryStreamExt};
+
 use crate::auth::{SessionManager, Source};
 use crate::error::AppError;
 use crate::http::HttpClient;
 use crate::moodle::models::{
-    MoodleAnnouncement, MoodleAssignment, MoodleCourse, MoodleEvent, MoodleGradeTotal,
-    MoodleSection,
+    MoodleAnnouncement, MoodleAssignment, MoodleCourse, MoodleCourseContent, MoodleEvent,
+    MoodleGradeTotal, MoodleSection,
 };
 use crate::moodle::parser;
 
@@ -143,19 +145,66 @@ impl MoodleClient {
         let first_page = self
             .get_path(&format!("/course/view.php?id={course_id}"))
             .await?;
-        let numbers = parser::parse_section_numbers(&first_page);
+        self.parse_sections(course_id, &first_page).await
+    }
 
-        let mut sections = Vec::with_capacity(numbers.len());
-        for number in numbers {
-            let html = if number == 0 {
-                first_page.clone()
-            } else {
-                self.get_path(&format!("/course/view.php?id={course_id}&section={number}"))
-                    .await?
-            };
-            sections.push(parser::parse_course_html(&html, number)?);
-        }
-        Ok(sections)
+    pub async fn fetch_course_content(
+        &self,
+        course_id: i64,
+    ) -> Result<MoodleCourseContent, AppError> {
+        let first_page = self
+            .get_path(&format!("/course/view.php?id={course_id}"))
+            .await?;
+        let sections = self.parse_sections(course_id, &first_page).await?;
+        let announcements = self.parse_announcements(&first_page).await;
+
+        Ok(MoodleCourseContent {
+            sections,
+            announcements,
+        })
+    }
+
+    async fn parse_sections(
+        &self,
+        course_id: i64,
+        first_page: &str,
+    ) -> Result<Vec<MoodleSection>, AppError> {
+        // Matches the HTTP client's in-flight limit so the pages do not
+        // queue behind a wider burst.
+        const CONCURRENCY: usize = 4;
+
+        let numbers = parser::parse_section_numbers(first_page);
+
+        let mut sections: Vec<(usize, MoodleSection)> =
+            stream::iter(numbers.iter().copied().enumerate())
+                .map(|(index, number)| async move {
+                    let html = if number == 0 {
+                        first_page.to_string()
+                    } else {
+                        self.get_path(&format!("/course/view.php?id={course_id}&section={number}"))
+                            .await?
+                    };
+                    let section = parser::parse_course_html(&html, number)?;
+                    Ok::<_, AppError>((index, section))
+                })
+                .buffer_unordered(CONCURRENCY)
+                .try_collect()
+                .await?;
+
+        sections.sort_by_key(|(index, _)| *index);
+        Ok(sections.into_iter().map(|(_, section)| section).collect())
+    }
+
+    async fn parse_announcements(
+        &self,
+        first_page: &str,
+    ) -> Result<Vec<MoodleAnnouncement>, AppError> {
+        let Some(forum_url) = parser::parse_news_forum_url(first_page) else {
+            return Ok(Vec::new());
+        };
+
+        let page = self.get_text(&forum_url).await?;
+        parser::parse_announcements_html(&page)
     }
 
     pub async fn fetch_assignment(&self, cmid: i64) -> Result<MoodleAssignment, AppError> {
@@ -192,12 +241,7 @@ impl MoodleClient {
         let html = self
             .get_path(&format!("/course/view.php?id={course_id}"))
             .await?;
-        let Some(forum_url) = parser::parse_news_forum_url(&html) else {
-            return Ok(Vec::new());
-        };
-
-        let page = self.get_text(&forum_url).await?;
-        parser::parse_announcements_html(&page)
+        self.parse_announcements(&html).await
     }
 
     /// The per-user report may not exist in this installation: with no

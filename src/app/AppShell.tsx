@@ -10,9 +10,10 @@ import {
     Search,
     Settings,
 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import {
     Sidebar,
@@ -30,9 +31,9 @@ import {
     SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { LANGUAGES } from '@/i18n';
-import { api } from '@/lib/api';
 
-import { SyncBadge, type SyncState } from './SyncBadge';
+import { SyncBadge } from './SyncBadge';
+import { useSyncController } from './use-sync';
 
 const NAV = [
     { to: '/', labelKey: 'nav.home' as const, icon: Home },
@@ -58,33 +59,25 @@ interface AppShellProps {
     children: ReactNode;
 }
 
+const SOURCE_LABEL = {
+    moodle: 'Moodle',
+    ellucian: 'Ellucian',
+    banner: 'Banner',
+} as const;
+
 export function AppShell({ children }: AppShellProps) {
     const { t, i18n } = useTranslation();
+    const sync = useSyncController();
+    const syncing = sync.state === 'running';
     const locale =
         LANGUAGES.find((language) => language.code === i18n.language)?.locale ??
         'en-US';
+    const lastSyncAt = sync.lastRun?.finished_at
+        ? new Date(sync.lastRun.finished_at)
+        : null;
     const pathname = useRouterState({
         select: (state) => state.location.pathname,
     });
-    const [syncing, setSyncing] = useState(false);
-    const [syncState, setSyncState] = useState<SyncState>('idle');
-    const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
-
-    async function sync(): Promise<void> {
-        setSyncing(true);
-        setSyncState('running');
-
-        try {
-            const run = await api.startSync();
-            setSyncState(run.status);
-            setLastSyncAt(new Date());
-        } catch (cause) {
-            console.error(cause);
-            setSyncState('failed');
-        } finally {
-            setSyncing(false);
-        }
-    }
 
     return (
         <SidebarProvider>
@@ -130,7 +123,18 @@ export function AppShell({ children }: AppShellProps) {
                 <header className="flex h-14 items-center gap-3 border-b border-border px-4">
                     <SidebarTrigger />
                     <Separator orientation="vertical" className="h-6" />
-                    <SyncBadge state={syncState} />
+                    <SyncBadge state={sync.state} />
+                    {syncing ? (
+                        <div className="flex items-center gap-2">
+                            <Progress value={sync.progress} className="w-24" />
+                            <span className="text-xs text-muted-foreground">
+                                {sync.progress}%
+                                {sync.source
+                                    ? ` · ${SOURCE_LABEL[sync.source]}`
+                                    : ''}
+                            </span>
+                        </div>
+                    ) : null}
                     {lastSyncAt ? (
                         <span className="text-xs text-muted-foreground">
                             {t('shell.lastUpdate', {
@@ -142,10 +146,19 @@ export function AppShell({ children }: AppShellProps) {
                         </span>
                     ) : null}
                     <div className="ml-auto flex items-center gap-2">
+                        {syncing ? (
+                            <button
+                                type="button"
+                                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+                                onClick={sync.cancel}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                        ) : null}
                         <button
                             type="button"
                             className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
-                            onClick={sync}
+                            onClick={() => void sync.start()}
                             disabled={syncing}
                         >
                             {syncing ? t('shell.syncing') : t('shell.sync')}

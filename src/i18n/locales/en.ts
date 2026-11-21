@@ -7,6 +7,7 @@ export const en = {
         save: 'Save',
         retry: 'Retry',
         continue: 'Continue',
+        cancel: 'Cancel',
     },
     nav: {
         home: 'Home',

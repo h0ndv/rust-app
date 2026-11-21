@@ -19,11 +19,12 @@ use rust_app_lib::moodle::models::{
 use rust_app_lib::state::AppState;
 use rust_app_lib::sync::downloads::safe_name;
 use rust_app_lib::sync::sources::{EllucianSource, MoodleActivityPage, MoodleSource, SyncDeps};
-use rust_app_lib::sync::{BannerSource, SyncOrchestrator, SyncStatusKind};
+use rust_app_lib::sync::{BannerSource, SyncOrchestrator, SyncStatusKind, SyncTrigger};
 
 #[derive(Default)]
 struct FakeMoodle {
     calls: AtomicUsize,
+    fail_announcements: bool,
 }
 
 #[async_trait]
@@ -91,6 +92,9 @@ impl MoodleSource for FakeMoodle {
     }
 
     async fn announcements(&self, _course_id: i64) -> Result<Vec<MoodleAnnouncement>, AppError> {
+        if self.fail_announcements {
+            return Err(AppError::Parse("foro sin respuesta".into()));
+        }
         Ok(Vec::new())
     }
 
@@ -192,13 +196,13 @@ impl BannerSource for FakeBanner {
     }
 }
 
-async fn test_state() -> AppState {
+async fn test_state_with_moodle(moodle: Arc<dyn MoodleSource>) -> AppState {
     let pool = connect(Path::new(":memory:")).await.unwrap();
     migrate(&pool).await.unwrap();
     let repo = Repo::new(pool.clone());
 
     let deps = SyncDeps {
-        moodle: Arc::new(FakeMoodle::default()),
+        moodle,
         ellucian: Arc::new(FakeEllucian),
         banner: Arc::new(FakeBanner),
         repo: repo.clone(),
@@ -209,10 +213,54 @@ async fn test_state() -> AppState {
     AppState::new(pool, repo, Arc::new(SyncOrchestrator::new(deps)))
 }
 
+async fn test_state() -> AppState {
+    test_state_with_moodle(Arc::new(FakeMoodle::default())).await
+}
+
 #[test]
 fn limiter_counts_run_requests() {
     let limiter = RateLimiter::new(6, 10);
     assert_eq!(limiter.count(), 0);
+}
+
+#[tokio::test]
+async fn status_is_terminal_after_run() {
+    let state = test_state().await;
+    state.sync.run(SyncTrigger::Manual).await.unwrap();
+
+    let status = state.sync.status();
+    assert_eq!(status.state, SyncStatusKind::Ok);
+    assert_eq!(status.progress, 100);
+}
+
+#[tokio::test]
+async fn announcement_failure_does_not_abort_the_course() {
+    let moodle = Arc::new(FakeMoodle {
+        calls: AtomicUsize::new(0),
+        fail_announcements: true,
+    });
+    let state = test_state_with_moodle(moodle).await;
+
+    let run = state.sync.run(SyncTrigger::Manual).await.unwrap();
+
+    assert_eq!(run.status, SyncStatusKind::Partial);
+    assert_eq!(state.repo.course_count().await.unwrap(), 1);
+}
+
+#[tokio::test]
+async fn start_returns_running_and_finishes() {
+    let state = test_state().await;
+    let status = state.sync.start(SyncTrigger::Manual);
+    assert_eq!(status.state, SyncStatusKind::Running);
+
+    for _ in 0..200 {
+        if state.sync.status().state != SyncStatusKind::Running {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+
+    assert_eq!(state.sync.status().state, SyncStatusKind::Ok);
 }
 
 #[tokio::test]

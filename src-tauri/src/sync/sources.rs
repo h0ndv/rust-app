@@ -12,8 +12,8 @@ use crate::ellucian::models::{EllucianClass, InstructionalEvent};
 use crate::error::AppError;
 use crate::http::{HttpClient, RateLimiter};
 use crate::moodle::models::{
-    MoodleAnnouncement, MoodleAssignment, MoodleCourse, MoodleEvent, MoodleFile, MoodleGradeTotal,
-    MoodleSection,
+    MoodleAnnouncement, MoodleAssignment, MoodleCourse, MoodleCourseContent, MoodleEvent,
+    MoodleFile, MoodleGradeTotal, MoodleSection,
 };
 use crate::moodle::{MoodleClient, parser as moodle_parser};
 
@@ -32,6 +32,14 @@ pub trait MoodleSource: Send + Sync {
     async fn courses(&self) -> Result<Vec<MoodleCourse>, AppError>;
     async fn calendar(&self) -> Result<Vec<MoodleEvent>, AppError>;
     async fn sections(&self, course_id: i64) -> Result<Vec<MoodleSection>, AppError>;
+    async fn course_content(&self, course_id: i64) -> Result<MoodleCourseContent, AppError> {
+        let sections = self.sections(course_id).await?;
+        let announcements = self.announcements(course_id).await;
+        Ok(MoodleCourseContent {
+            sections,
+            announcements,
+        })
+    }
     async fn activity(&self, url: &str) -> Result<MoodleActivityPage, AppError>;
     async fn announcements(&self, course_id: i64) -> Result<Vec<MoodleAnnouncement>, AppError>;
     async fn grade_total(&self, course_id: i64) -> Result<Option<MoodleGradeTotal>, AppError>;
@@ -103,6 +111,10 @@ impl MoodleSource for LiveSources {
 
     async fn sections(&self, course_id: i64) -> Result<Vec<MoodleSection>, AppError> {
         self.moodle.fetch_sections(course_id).await
+    }
+
+    async fn course_content(&self, course_id: i64) -> Result<MoodleCourseContent, AppError> {
+        self.moodle.fetch_course_content(course_id).await
     }
 
     async fn activity(&self, url: &str) -> Result<MoodleActivityPage, AppError> {

@@ -9,6 +9,7 @@ export const es: Catalog = {
         save: 'Guardar',
         retry: 'Reintentar',
         continue: 'Continuar',
+        cancel: 'Cancelar',
     },
     nav: {
         home: 'Inicio',
