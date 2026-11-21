@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 import { api, type DashboardDto, type TaskDto } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 function TaskList({ tasks }: { tasks: TaskDto[] }) {
+    const { formatDate } = useFormatters();
+
     return (
         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
             {tasks.map((task) => (
@@ -22,6 +25,7 @@ function TaskList({ tasks }: { tasks: TaskDto[] }) {
 }
 
 export function Home({ dashboard }: { dashboard: DashboardDto }) {
+    const { t } = useTranslation();
     const empty =
         dashboard.overdue.length === 0 &&
         dashboard.due_soon.length === 0 &&
@@ -29,33 +33,34 @@ export function Home({ dashboard }: { dashboard: DashboardDto }) {
         dashboard.new_resources.length === 0;
 
     if (empty) {
-        return (
-            <EmptyNote>
-                Todavía no hay datos. Sincroniza para traer los ramos y las
-                tareas.
-            </EmptyNote>
-        );
+        return <EmptyNote>{t('home.empty')}</EmptyNote>;
     }
 
     return (
         <div className="flex flex-col gap-8">
             {dashboard.overdue.length > 0 ? (
                 <section className="flex flex-col gap-2">
-                    <h3 className="text-sm font-semibold">Atrasadas</h3>
+                    <h3 className="text-sm font-semibold">
+                        {t('home.overdue')}
+                    </h3>
                     <TaskList tasks={dashboard.overdue} />
                 </section>
             ) : null}
 
             {dashboard.due_soon.length > 0 ? (
                 <section className="flex flex-col gap-2">
-                    <h3 className="text-sm font-semibold">Próximos 7 días</h3>
+                    <h3 className="text-sm font-semibold">
+                        {t('home.dueSoon')}
+                    </h3>
                     <TaskList tasks={dashboard.due_soon} />
                 </section>
             ) : null}
 
             {dashboard.next_classes.length > 0 ? (
                 <section className="flex flex-col gap-2">
-                    <h3 className="text-sm font-semibold">Próximas clases</h3>
+                    <h3 className="text-sm font-semibold">
+                        {t('home.nextClasses')}
+                    </h3>
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {dashboard.next_classes.map((event) => (
                             <li
@@ -81,7 +86,9 @@ export function Home({ dashboard }: { dashboard: DashboardDto }) {
 
             {dashboard.new_resources.length > 0 ? (
                 <section className="flex flex-col gap-2">
-                    <h3 className="text-sm font-semibold">Recursos nuevos</h3>
+                    <h3 className="text-sm font-semibold">
+                        {t('home.newResources')}
+                    </h3>
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {dashboard.new_resources.map((resource) => (
                             <li key={resource.id} className="p-3 text-sm">
@@ -96,20 +103,21 @@ export function Home({ dashboard }: { dashboard: DashboardDto }) {
                 to="/tareas"
                 className="text-sm text-primary underline-offset-4 hover:underline"
             >
-                Ver todas las tareas
+                {t('home.allTasks')}
             </Link>
         </div>
     );
 }
 
 export function HomeScreen() {
+    const { t } = useTranslation();
     const { data, error, isPending } = useQuery({
         queryKey: ['dashboard'],
         queryFn: api.getDashboard,
     });
 
     return (
-        <Screen title="Inicio" subtitle="Qué tienes pendiente y qué viene.">
+        <Screen title={t('home.title')} subtitle={t('home.subtitle')}>
             {isPending ? (
                 <Loading />
             ) : error ? (

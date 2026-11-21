@@ -1,4 +1,5 @@
 import { Check, Circle, Loader2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import type { Source } from '@/lib/api';
 
@@ -12,12 +13,12 @@ export const STEP_LABELS: Record<Source, string> = {
 
 export const STEP_ORDER: Source[] = ['ellucian', 'moodle', 'banner'];
 
-const STATUS_TEXT: Record<StepStatus, string> = {
-    pending: 'En espera',
-    active: 'Conectando',
-    done: 'Listo',
-    failed: 'Falló',
-};
+const STATUS_KEY = {
+    pending: 'onboarding.steps.pending',
+    active: 'onboarding.steps.active',
+    done: 'onboarding.steps.done',
+    failed: 'onboarding.steps.failed',
+} as const;
 
 interface LoginProgressProps {
     steps: Record<Source, StepStatus>;
@@ -25,8 +26,13 @@ interface LoginProgressProps {
 }
 
 export function LoginProgress({ steps, stalledSource }: LoginProgressProps) {
+    const { t } = useTranslation();
+
     return (
-        <ol className="flex flex-col gap-3" aria-label="Pasos de conexión">
+        <ol
+            className="flex flex-col gap-3"
+            aria-label={t('onboarding.steps.aria')}
+        >
             {STEP_ORDER.map((source) => {
                 const status = steps[source] ?? 'pending';
                 const stalled = stalledSource === source;
@@ -52,7 +58,9 @@ export function LoginProgress({ steps, stalledSource }: LoginProgressProps) {
                             {STEP_LABELS[source]}
                         </span>
                         <span className="text-muted-foreground">
-                            {stalled ? 'Sin respuesta' : STATUS_TEXT[status]}
+                            {stalled
+                                ? t('onboarding.steps.stalled')
+                                : t(STATUS_KEY[status])}
                         </span>
                     </li>
                 );

@@ -132,6 +132,7 @@ pub struct SettingsDto {
     pub downloads_dir: String,
     pub theme: String,
     pub notifications: bool,
+    pub language: String,
 }
 
 impl Default for SettingsDto {
@@ -141,6 +142,7 @@ impl Default for SettingsDto {
             downloads_dir: String::new(),
             theme: "system".into(),
             notifications: true,
+            language: "en".into(),
         }
     }
 }

@@ -37,4 +37,5 @@ fn settings_have_default_values() {
     assert_eq!(dto.sync_interval_minutes, 30);
     assert_eq!(dto.theme, "system");
     assert!(dto.notifications);
+    assert_eq!(dto.language, "en");
 }

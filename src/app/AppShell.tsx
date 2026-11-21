@@ -11,8 +11,8 @@ import {
     Settings,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
     Sidebar,
@@ -29,49 +29,58 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { LANGUAGES } from '@/i18n';
 import { api } from '@/lib/api';
 
+import { SyncBadge, type SyncState } from './SyncBadge';
+
 const NAV = [
-    { to: '/', label: 'Inicio', icon: Home },
-    { to: '/ramos', label: 'Ramos', icon: BookOpen },
-    { to: '/tareas', label: 'Tareas', icon: ClipboardList },
-    { to: '/recursos', label: 'Recursos', icon: FolderOpen },
-    { to: '/notas', label: 'Notas', icon: GraduationCap },
-    { to: '/horario', label: 'Horario', icon: CalendarDays },
-    { to: '/novedades', label: 'Novedades', icon: Newspaper },
-    { to: '/buscar', label: 'Buscador', icon: Search },
-    { to: '/ajustes', label: 'Ajustes', icon: Settings },
+    { to: '/', labelKey: 'nav.home' as const, icon: Home },
+    { to: '/ramos', labelKey: 'nav.courses' as const, icon: BookOpen },
+    { to: '/tareas', labelKey: 'nav.tasks' as const, icon: ClipboardList },
+    {
+        to: '/recursos',
+        labelKey: 'nav.resources' as const,
+        icon: FolderOpen,
+    },
+    { to: '/notas', labelKey: 'nav.grades' as const, icon: GraduationCap },
+    {
+        to: '/horario',
+        labelKey: 'nav.schedule' as const,
+        icon: CalendarDays,
+    },
+    { to: '/novedades', labelKey: 'nav.news' as const, icon: Newspaper },
+    { to: '/buscar', labelKey: 'nav.search' as const, icon: Search },
+    { to: '/ajustes', labelKey: 'nav.settings' as const, icon: Settings },
 ];
 
 interface AppShellProps {
     children: ReactNode;
 }
 
-const LABELS: Record<string, string> = {
-    ok: 'Al día',
-    partial: 'Sincronización parcial',
-    failed: 'Falló la sincronización',
-    running: 'Sincronizando',
-};
-
 export function AppShell({ children }: AppShellProps) {
+    const { t, i18n } = useTranslation();
+    const locale =
+        LANGUAGES.find((language) => language.code === i18n.language)?.locale ??
+        'en-US';
     const pathname = useRouterState({
         select: (state) => state.location.pathname,
     });
     const [syncing, setSyncing] = useState(false);
-    const [syncLabel, setSyncLabel] = useState('Sin sincronizar');
-    const [lastSync, setLastSync] = useState<string | null>(null);
+    const [syncState, setSyncState] = useState<SyncState>('idle');
+    const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
 
     async function sync(): Promise<void> {
         setSyncing(true);
-        setSyncLabel(LABELS.running);
+        setSyncState('running');
 
         try {
             const run = await api.startSync();
-            setSyncLabel(LABELS[run.status] ?? 'Sincronizado');
-            setLastSync(new Date().toLocaleTimeString('es-CL'));
+            setSyncState(run.status);
+            setLastSyncAt(new Date());
         } catch (cause) {
-            setSyncLabel(String(cause));
+            console.error(cause);
+            setSyncState('failed');
         } finally {
             setSyncing(false);
         }
@@ -88,18 +97,20 @@ export function AppShell({ children }: AppShellProps) {
 
                 <SidebarContent>
                     <SidebarGroup>
-                        <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+                        <SidebarGroupLabel>
+                            {t('shell.navigation')}
+                        </SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {NAV.map((item) => (
                                     <SidebarMenuItem key={item.to}>
                                         <SidebarMenuButton
                                             isActive={pathname === item.to}
-                                            tooltip={item.label}
+                                            tooltip={t(item.labelKey)}
                                             render={<Link to={item.to} />}
                                         >
                                             <item.icon />
-                                            <span>{item.label}</span>
+                                            <span>{t(item.labelKey)}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 ))}
@@ -110,7 +121,7 @@ export function AppShell({ children }: AppShellProps) {
 
                 <SidebarFooter>
                     <div className="px-2 py-1 text-xs text-muted-foreground">
-                        Cuenta
+                        {t('shell.account')}
                     </div>
                 </SidebarFooter>
             </Sidebar>
@@ -119,12 +130,15 @@ export function AppShell({ children }: AppShellProps) {
                 <header className="flex h-14 items-center gap-3 border-b border-border px-4">
                     <SidebarTrigger />
                     <Separator orientation="vertical" className="h-6" />
-                    <Badge variant={syncing ? 'secondary' : 'outline'}>
-                        {syncLabel}
-                    </Badge>
-                    {lastSync ? (
+                    <SyncBadge state={syncState} />
+                    {lastSyncAt ? (
                         <span className="text-xs text-muted-foreground">
-                            Última actualización: {lastSync}
+                            {t('shell.lastUpdate', {
+                                time: lastSyncAt.toLocaleTimeString(locale, {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                }),
+                            })}
                         </span>
                     ) : null}
                     <div className="ml-auto flex items-center gap-2">
@@ -134,7 +148,7 @@ export function AppShell({ children }: AppShellProps) {
                             onClick={sync}
                             disabled={syncing}
                         >
-                            {syncing ? 'Sincronizando' : 'Sincronizar'}
+                            {syncing ? t('shell.syncing') : t('shell.sync')}
                         </button>
                     </div>
                 </header>

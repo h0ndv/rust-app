@@ -1,27 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { api, type TaskDto, type TaskFilter } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 const GROUPS = [
-    { status: 'atrasada', title: 'Atrasadas' },
-    { status: 'pendiente', title: 'Pendientes' },
-    { status: 'entregada', title: 'Entregadas' },
-    { status: 'calificada', title: 'Calificadas' },
+    { status: 'overdue', labelKey: 'tasks.groups.overdue' as const },
+    { status: 'pending', labelKey: 'tasks.groups.pending' as const },
+    { status: 'submitted', labelKey: 'tasks.groups.submitted' as const },
+    { status: 'graded', labelKey: 'tasks.groups.graded' as const },
 ];
 
-const FILTERS: { value: TaskFilter; label: string }[] = [
-    { value: 'all', label: 'Todas' },
-    { value: 'overdue', label: 'Atrasadas' },
-    { value: 'pending', label: 'Pendientes' },
-    { value: 'submitted', label: 'Entregadas' },
-    { value: 'graded', label: 'Calificadas' },
+const FILTERS: {
+    value: TaskFilter;
+    labelKey:
+        | 'tasks.filters.all'
+        | 'tasks.filters.overdue'
+        | 'tasks.filters.pending'
+        | 'tasks.filters.submitted'
+        | 'tasks.filters.graded';
+}[] = [
+    { value: 'all', labelKey: 'tasks.filters.all' },
+    { value: 'overdue', labelKey: 'tasks.filters.overdue' },
+    { value: 'pending', labelKey: 'tasks.filters.pending' },
+    { value: 'submitted', labelKey: 'tasks.filters.submitted' },
+    { value: 'graded', labelKey: 'tasks.filters.graded' },
 ];
 
 function TaskRow({ task }: { task: TaskDto }) {
+    const { t } = useTranslation();
+    const { formatDate, formatGrade } = useFormatters();
+
     return (
         <li className="flex flex-wrap items-center gap-3 p-3">
             <div className="flex min-w-0 flex-1 flex-col">
@@ -35,7 +47,7 @@ function TaskRow({ task }: { task: TaskDto }) {
             </span>
             {task.grade !== null ? (
                 <span className="text-sm font-medium">
-                    {task.grade.toFixed(1).replace('.', ',')}
+                    {formatGrade(task.grade)}
                 </span>
             ) : null}
             {task.url ? (
@@ -44,7 +56,7 @@ function TaskRow({ task }: { task: TaskDto }) {
                     className="text-xs text-primary underline-offset-4 hover:underline"
                     onClick={() => api.openInApp(task.url as string)}
                 >
-                    Abrir
+                    {t('common.open')}
                 </button>
             ) : null}
         </li>
@@ -52,8 +64,10 @@ function TaskRow({ task }: { task: TaskDto }) {
 }
 
 export function Tasks({ tasks }: { tasks: TaskDto[] }) {
+    const { t } = useTranslation();
+
     if (tasks.length === 0) {
-        return <EmptyNote>No hay tareas con este filtro.</EmptyNote>;
+        return <EmptyNote>{t('tasks.empty')}</EmptyNote>;
     }
 
     return (
@@ -69,7 +83,7 @@ export function Tasks({ tasks }: { tasks: TaskDto[] }) {
                 return (
                     <section key={group.status} className="flex flex-col gap-2">
                         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                            {group.title}
+                            {t(group.labelKey)}
                         </h3>
                         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                             {items.map((task) => (
@@ -84,6 +98,7 @@ export function Tasks({ tasks }: { tasks: TaskDto[] }) {
 }
 
 export function TasksScreen() {
+    const { t } = useTranslation();
     const [filter, setFilter] = useState<TaskFilter>('all');
     const { data, error, isPending } = useQuery({
         queryKey: ['tasks', filter],
@@ -92,8 +107,8 @@ export function TasksScreen() {
 
     return (
         <Screen
-            title="Tareas"
-            subtitle="Lo que vence, lo entregado y lo calificado."
+            title={t('tasks.title')}
+            subtitle={t('tasks.subtitle')}
             actions={
                 <div className="flex flex-wrap gap-2">
                     {FILTERS.map((item) => (
@@ -107,7 +122,7 @@ export function TasksScreen() {
                             }
                             onClick={() => setFilter(item.value)}
                         >
-                            {item.label}
+                            {t(item.labelKey)}
                         </button>
                     ))}
                 </div>

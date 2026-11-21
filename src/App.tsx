@@ -12,6 +12,7 @@ import {
     type OnboardingState,
 } from './features/onboarding/Onboarding';
 import { api, type Source } from './lib/api';
+import { appError, type ErrorKind } from './lib/errors';
 
 const STALL_MS = 90_000;
 
@@ -31,7 +32,7 @@ function App() {
         useState<Record<Source, StepStatus>>(INITIAL_STEPS);
     const [failedSource, setFailedSource] = useState<Source>();
     const [stalledSource, setStalledSource] = useState<Source>();
-    const [error, setError] = useState<string>();
+    const [error, setError] = useState<ErrorKind>();
     const [ready, setReady] = useState(false);
 
     async function runStep(source: Source): Promise<boolean> {
@@ -52,7 +53,8 @@ function App() {
             window.clearTimeout(timer);
             setSteps((current) => ({ ...current, [source]: 'failed' }));
             setFailedSource(source);
-            setError(String(cause));
+            console.error(cause);
+            setError(appError(cause).kind);
             return false;
         }
     }

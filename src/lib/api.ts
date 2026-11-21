@@ -142,6 +142,7 @@ export interface SettingsDto {
     downloads_dir: string;
     theme: string;
     notifications: boolean;
+    language: string;
 }
 
 export interface ActivityRow {
@@ -218,6 +219,8 @@ export const api = {
     getSettings: () => invoke<SettingsDto>('get_settings'),
     saveSettings: (settings: SettingsDto) =>
         invoke<void>('save_settings', { settings }),
+    setLanguage: (language: string) =>
+        invoke<void>('set_language', { language }),
 
     openInApp: (url: string) => invoke<void>('open_in_app', { url }),
     downloadFile: (fileId: string) => invoke<void>('download_file', { fileId }),

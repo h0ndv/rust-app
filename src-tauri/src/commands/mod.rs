@@ -11,12 +11,16 @@ pub use sync::*;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use url::Url;
 
+use crate::error::AppError;
 use crate::state::AppState;
 use crate::sync::Downloads;
 
+pub type Cmd<T> = Result<T, AppError>;
+
 #[tauri::command]
-pub async fn open_in_app(app: AppHandle, url: String) -> Result<(), String> {
-    let parsed = Url::parse(&url).map_err(|error| error.to_string())?;
+pub async fn open_in_app(app: AppHandle, url: String) -> Cmd<()> {
+    let parsed =
+        Url::parse(&url).map_err(|error| AppError::Internal(format!("url inválida: {error}")))?;
 
     let window = match app.get_webview_window("browser") {
         Some(window) => window,
@@ -24,17 +28,19 @@ pub async fn open_in_app(app: AppHandle, url: String) -> Result<(), String> {
             .title("rust-app")
             .inner_size(1100.0, 800.0)
             .build()
-            .map_err(|error| error.to_string())?,
+            .map_err(|error| AppError::Internal(error.to_string()))?,
     };
 
-    window.navigate(parsed).map_err(|error| error.to_string())?;
+    window
+        .navigate(parsed)
+        .map_err(|error| AppError::Internal(error.to_string()))?;
     let _ = window.show();
     let _ = window.set_focus();
     Ok(())
 }
 
 #[tauri::command]
-pub fn download_file(downloads: State<'_, Downloads>, file_id: String) -> Result<(), String> {
+pub fn download_file(downloads: State<'_, Downloads>, file_id: String) -> Cmd<()> {
     downloads.enqueue(file_id);
     Ok(())
 }
@@ -58,14 +64,14 @@ const CLEAR_ORDER: [&str; 14] = [
 
 /// Deletes the local data. The WebView2 profile is left untouched.
 #[tauri::command]
-pub async fn clear_data(state: State<'_, AppState>) -> Result<u64, String> {
+pub async fn clear_data(state: State<'_, AppState>) -> Cmd<u64> {
     let mut deleted = 0u64;
 
     for table in CLEAR_ORDER {
         let result = sqlx::query(&format!("DELETE FROM {table}"))
             .execute(&state.pool)
             .await
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| AppError::Internal(error.to_string()))?;
         deleted += result.rows_affected();
     }
 

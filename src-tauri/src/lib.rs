@@ -95,6 +95,7 @@ pub fn run() {
             commands::search,
             commands::get_settings,
             commands::save_settings,
+            commands::set_language,
             commands::open_in_app,
             commands::download_file,
             commands::clear_data

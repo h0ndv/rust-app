@@ -59,9 +59,10 @@ keeps the UI replaceable.
 | Path                      | Responsibility                                                             |
 | ------------------------- | -------------------------------------------------------------------------- |
 | `src/`                    | React screens, components and the Tauri client                             |
+| `src/i18n/`               | English/Spanish catalogs, i18next setup, locale resolution                 |
 | `src-tauri/src/lib.rs`    | Builder, setup, DB bootstrap, command registry                             |
 | `src-tauri/src/state.rs`  | `AppState { pool, repo, sync }`                                            |
-| `src-tauri/src/error.rs`  | `AppError` with `kind` and a Spanish message                               |
+| `src-tauri/src/error.rs`  | `AppError` with `kind` and a technical message                             |
 | `src-tauri/src/http/`     | `HttpClient` (timeout, 4 in flight), `RateLimiter` (6/s, 600/run)          |
 | `src-tauri/src/auth/`     | `Source`, `SessionState`, `SessionManager`, login windows, cookies, health |
 | `src-tauri/src/moodle/`   | AJAX client, HTML/JSON parsers, models                                     |
@@ -218,11 +219,16 @@ sees database models.
 | Session  | `connect(source?)`, `session_state`                                                                                                 |
 | Sync     | `start_sync`, `cancel_sync`, `sync_status`                                                                                          |
 | Reads    | `get_dashboard`, `list_courses`, `get_course`, `list_tasks`, `list_resources`, `list_grades`, `get_schedule`, `list_news`, `search` |
-| Settings | `get_settings`, `save_settings`                                                                                                     |
+| Settings | `get_settings`, `save_settings`, `set_language`                                                                                     |
 | Actions  | `open_in_app`, `download_file`, `clear_data`                                                                                        |
 
 Filters (`TaskFilter`, `ResourceFilter`) travel lowercase so the JSON stays
 `"overdue"`, `"new"`.
+
+The interface language lives in `settings.language` and defaults to `"en"`. UI copy lives
+in `src/i18n/locales`; Rust sends stable English codes and serialized `AppError` objects
+(`{ kind, message }`). Adding a language is a frontend-only change: a catalog and a
+`LANGUAGES` entry with its `Intl` locale; `supportedLngs` and the resource map are derived.
 
 Events emitted to the UI: `sync://progress`, `sync://finished`, `download://finished`,
 `download://error`.
@@ -239,6 +245,7 @@ Events emitted to the UI: `sync://progress`, `sync://finished`, `download://fini
 | `last_seen_at` column                                                   | Reuse `first_seen_at`               | 7-day archiving needs the last time an item was seen                | One migration                                           |
 | Resources are files, not pages                                          | Fetch `mod/resource/view.php`       | The page redirects to the PDF; reading it as text hung the sync     | Attachment metadata comes from the link instead         |
 | Baseline per course                                                     | Global first run                    | A new course added mid-semester should not flood Novedades          | A newly added course never marks its first items as new |
+| Frontend-owned i18n catalogs                                            | Rust-localized messages             | UI copy and `Intl` formatting change with the interface             | A catalog per language                                  |
 
 ## 12. Extension points
 

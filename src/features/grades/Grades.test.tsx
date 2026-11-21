@@ -30,14 +30,14 @@ const grades: GradesDto = {
 test('shows Banner grades and the Moodle total separately', () => {
     render(<Grades grades={grades} />);
 
-    expect(screen.getByText('Nota oficial')).toBeInTheDocument();
-    expect(screen.getByText('Total Moodle')).toBeInTheDocument();
-    expect(screen.getByText('6,5')).toBeInTheDocument();
-    expect(screen.getByText('5,5')).toBeInTheDocument();
+    expect(screen.getByText('Official grade')).toBeInTheDocument();
+    expect(screen.getByText('Moodle total')).toBeInTheDocument();
+    expect(screen.getByText('6.5')).toBeInTheDocument();
+    expect(screen.getByText('5.5')).toBeInTheDocument();
 });
 
 test('says when a total is missing instead of inventing one', () => {
     render(<Grades grades={{ ...grades, moodle_totals: [], banner: [] }} />);
 
-    expect(screen.getAllByText(/sin publicar/i)).toHaveLength(2);
+    expect(screen.getAllByText(/not published/i)).toHaveLength(2);
 });

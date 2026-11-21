@@ -11,7 +11,7 @@ function task(overrides: Partial<TaskDto>): TaskDto {
         course_name: 'Minería de Datos',
         title: 'Taller',
         due_at: null,
-        status: 'pendiente',
+        status: 'pending',
         submitted: false,
         grade: null,
         url: null,
@@ -23,20 +23,20 @@ test('separates overdue from pending', () => {
     render(
         <Tasks
             tasks={[
-                task({ id: 'a', status: 'atrasada', title: 'Atrasada' }),
-                task({ id: 'b', status: 'pendiente', title: 'Pendiente' }),
+                task({ id: 'a', status: 'overdue', title: 'Overdue task' }),
+                task({ id: 'b', status: 'pending', title: 'Pending task' }),
             ]}
         />,
     );
 
-    expect(screen.getByText('Atrasadas')).toBeInTheDocument();
-    expect(screen.getByText('Pendientes')).toBeInTheDocument();
-    expect(screen.getByText('Atrasada')).toBeInTheDocument();
-    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.getByText('Overdue')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(screen.getByText('Overdue task')).toBeInTheDocument();
+    expect(screen.getByText('Pending task')).toBeInTheDocument();
 });
 
 test('shows an empty state when there are no tasks', () => {
     render(<Tasks tasks={[]} />);
 
-    expect(screen.getByText(/no hay tareas/i)).toBeInTheDocument();
+    expect(screen.getByText(/no tasks match this filter/i)).toBeInTheDocument();
 });

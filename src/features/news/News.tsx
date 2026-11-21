@@ -1,17 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { api, type NewsItemDto } from '@/lib/api';
+import { ITEM_KIND_KEY, itemKind } from '@/lib/item-kind';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function News({ items }: { items: NewsItemDto[] }) {
+    const { t } = useTranslation();
+
     if (items.length === 0) {
-        return (
-            <EmptyNote>
-                Sin novedades. Ningún curso publicó anuncios nuevos ni dejó
-                recursos sin abrir.
-            </EmptyNote>
-        );
+        return <EmptyNote>{t('news.empty')}</EmptyNote>;
     }
 
     return (
@@ -20,7 +19,7 @@ export function News({ items }: { items: NewsItemDto[] }) {
                 <li key={item.id} className="flex flex-col gap-1 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium uppercase">
-                            {item.kind}
+                            {t(ITEM_KIND_KEY[itemKind(item.kind) ?? 'other'])}
                         </span>
                         <span className="text-sm font-medium">
                             {item.title}
@@ -43,16 +42,14 @@ export function News({ items }: { items: NewsItemDto[] }) {
 }
 
 export function NewsScreen() {
+    const { t } = useTranslation();
     const { data, error, isPending } = useQuery({
         queryKey: ['news'],
         queryFn: api.listNews,
     });
 
     return (
-        <Screen
-            title="Novedades"
-            subtitle="Anuncios de los foros y recursos que no has abierto."
-        >
+        <Screen title={t('news.title')} subtitle={t('news.subtitle')}>
             {isPending ? (
                 <Loading />
             ) : error ? (

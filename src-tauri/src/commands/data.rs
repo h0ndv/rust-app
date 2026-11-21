@@ -3,17 +3,73 @@ use sqlx::FromRow;
 use tauri::State;
 
 use crate::db::repo::CourseGroupDto;
+use crate::error::AppError;
 use crate::state::AppState;
 
+use super::Cmd;
 use super::dto::{
     DashboardDto, GradeRowDto, GradeTotalDto, GradesDto, NewsItemDto, ResourceDto, ResourceFilter,
     ScheduleEventDto, SearchHitDto, SearchResultsDto, SettingsDto, TaskDto, TaskFilter,
 };
 
-type Cmd<T> = Result<T, String>;
+fn fail(error: impl std::fmt::Display) -> AppError {
+    AppError::Internal(error.to_string())
+}
 
-fn fail(error: impl std::fmt::Display) -> String {
-    error.to_string()
+pub fn normalize_language(value: &str) -> String {
+    let value = value.trim().to_ascii_lowercase();
+    let valid = !value.is_empty()
+        && value.len() <= 35
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '-');
+
+    if valid { value } else { "en".to_string() }
+}
+
+async fn upsert_setting(pool: &sqlx::SqlitePool, key: &str, value: &str) -> Cmd<()> {
+    sqlx::query(
+        "INSERT INTO settings (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(key)
+    .bind(value)
+    .execute(pool)
+    .await
+    .map_err(fail)?;
+
+    Ok(())
+}
+
+pub fn normalize_status(value: Option<&str>) -> Option<String> {
+    value.map(|value| {
+        match value {
+            "atrasada" => "overdue",
+            "pendiente" => "pending",
+            "entregada" => "submitted",
+            "calificada" => "graded",
+            "sin_datos" => "no_data",
+            "por_confirmar" => "unconfirmed",
+            "informativa" => "informational",
+            other => other,
+        }
+        .to_string()
+    })
+}
+
+pub fn normalize_kind(value: &str) -> String {
+    match value {
+        "archivo" => "file",
+        other => other,
+    }
+    .to_string()
+}
+
+pub fn normalize_schedule_title(value: &str) -> String {
+    if value == "Clase" {
+        return String::new();
+    }
+    value.to_string()
 }
 
 #[derive(FromRow)]
@@ -90,7 +146,7 @@ impl From<TaskRow> for TaskDto {
             course_name: row.course_fullname,
             title: row.name,
             due_at: row.due_at,
-            status: row.status,
+            status: normalize_status(row.status.as_deref()),
             submitted: row.submitted.unwrap_or(false),
             grade: row.grade,
             url: row.url,
@@ -105,7 +161,7 @@ impl From<ResourceRow> for ResourceDto {
             course_id: row.course_id,
             course: row.course_fullname,
             title: row.name,
-            kind: row.kind,
+            kind: normalize_kind(&row.kind),
             mimetype: row.mimetype,
             size: row.size,
             url: row.url,
@@ -186,7 +242,7 @@ pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
     let tasks = load_tasks(&state).await?;
     let overdue: Vec<TaskDto> = tasks
         .iter()
-        .filter(|task| task.status.as_deref() == Some("atrasada"))
+        .filter(|task| task.status.as_deref() == Some("overdue"))
         .cloned()
         .collect();
     let due_soon: Vec<TaskDto> = tasks
@@ -224,7 +280,7 @@ pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
 
 #[tauri::command]
 pub async fn list_courses(state: State<'_, AppState>) -> Cmd<Vec<CourseGroupDto>> {
-    state.repo.list_course_groups().await.map_err(fail)
+    state.repo.list_course_groups().await
 }
 
 #[tauri::command]
@@ -232,7 +288,19 @@ pub async fn get_course(
     state: State<'_, AppState>,
     group_id: String,
 ) -> Cmd<crate::db::repo::CourseDetailDto> {
-    state.repo.get_course_detail(&group_id).await.map_err(fail)
+    let mut detail = state.repo.get_course_detail(&group_id).await?;
+
+    for task in &mut detail.tasks {
+        task.status = normalize_status(task.status.as_deref());
+    }
+    for resource in &mut detail.resources {
+        resource.kind = normalize_kind(&resource.kind);
+    }
+    for block in &mut detail.schedule {
+        block.title = normalize_schedule_title(&block.title);
+    }
+
+    Ok(detail)
 }
 
 #[tauri::command]
@@ -243,8 +311,8 @@ pub async fn list_tasks(state: State<'_, AppState>, filter: TaskFilter) -> Cmd<V
         .into_iter()
         .filter(|task| match filter {
             TaskFilter::All => true,
-            TaskFilter::Overdue => task.status.as_deref() == Some("atrasada"),
-            TaskFilter::Pending => task.status.as_deref() == Some("pendiente"),
+            TaskFilter::Overdue => task.status.as_deref() == Some("overdue"),
+            TaskFilter::Pending => task.status.as_deref() == Some("pending"),
             TaskFilter::Submitted => task.submitted,
             TaskFilter::Graded => task.grade.is_some(),
         })
@@ -331,7 +399,11 @@ pub async fn list_grades(state: State<'_, AppState>, term: Option<String>) -> Cm
 
 #[tauri::command]
 pub async fn get_schedule(state: State<'_, AppState>) -> Cmd<Vec<ScheduleEventDto>> {
-    load_schedule(&state).await
+    let mut events = load_schedule(&state).await?;
+    for event in &mut events {
+        event.title = normalize_schedule_title(&event.title);
+    }
+    Ok(events)
 }
 
 #[tauri::command]
@@ -355,7 +427,7 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
             title: row.title,
             body: row.body,
             published_at: row.published_at,
-            kind: "anuncio".into(),
+            kind: "announcement".into(),
         })
         .collect();
 
@@ -370,7 +442,7 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
             title: resource.title,
             body: String::new(),
             published_at: None,
-            kind: "recurso".into(),
+            kind: "resource".into(),
         });
     }
 
@@ -433,9 +505,12 @@ pub async fn get_settings(state: State<'_, AppState>) -> Cmd<SettingsDto> {
             "downloads_dir" => settings.downloads_dir = value,
             "theme" => settings.theme = value,
             "notifications" => settings.notifications = value == "true",
+            "language" => settings.language = normalize_language(&value),
             _ => {}
         }
     }
+
+    settings.language = normalize_language(&settings.language);
 
     if settings.downloads_dir.is_empty() {
         settings.downloads_dir = std::env::var("USERPROFILE")
@@ -448,6 +523,7 @@ pub async fn get_settings(state: State<'_, AppState>) -> Cmd<SettingsDto> {
 
 #[tauri::command]
 pub async fn save_settings(state: State<'_, AppState>, settings: SettingsDto) -> Cmd<()> {
+    let language = normalize_language(&settings.language);
     let pairs = [
         (
             "sync_interval_minutes",
@@ -456,19 +532,92 @@ pub async fn save_settings(state: State<'_, AppState>, settings: SettingsDto) ->
         ("downloads_dir", settings.downloads_dir),
         ("theme", settings.theme),
         ("notifications", settings.notifications.to_string()),
+        ("language", language),
     ];
 
     for (key, value) in pairs {
-        sqlx::query(
-            "INSERT INTO settings (key, value) VALUES (?, ?)
-             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        )
-        .bind(key)
-        .bind(value)
-        .execute(&state.pool)
-        .await
-        .map_err(fail)?;
+        upsert_setting(&state.pool, key, &value).await?;
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn set_language(state: State<'_, AppState>, language: String) -> Cmd<()> {
+    let language = normalize_language(&language);
+    upsert_setting(&state.pool, "language", &language).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_language_tags() {
+        assert_eq!(normalize_language("en"), "en");
+        assert_eq!(normalize_language("es"), "es");
+        assert_eq!(normalize_language("ES"), "es");
+        assert_eq!(normalize_language("fr"), "fr");
+        assert_eq!(normalize_language("pt-BR"), "pt-br");
+        assert_eq!(normalize_language("EN"), "en");
+        assert_eq!(normalize_language(""), "en");
+        assert_eq!(normalize_language("not a language"), "en");
+    }
+
+    #[test]
+    fn normalizes_legacy_status_values() {
+        assert_eq!(
+            normalize_status(Some("atrasada")).as_deref(),
+            Some("overdue")
+        );
+        assert_eq!(
+            normalize_status(Some("pendiente")).as_deref(),
+            Some("pending")
+        );
+        assert_eq!(
+            normalize_status(Some("overdue")).as_deref(),
+            Some("overdue")
+        );
+        assert_eq!(normalize_status(None), None);
+    }
+
+    #[test]
+    fn normalizes_legacy_file_kind() {
+        assert_eq!(normalize_kind("archivo"), "file");
+        assert_eq!(normalize_kind("file"), "file");
+    }
+
+    #[test]
+    fn normalizes_legacy_schedule_title() {
+        assert_eq!(normalize_schedule_title("Clase"), "");
+        assert_eq!(
+            normalize_schedule_title("Minería de Datos"),
+            "Minería de Datos"
+        );
+    }
+
+    #[tokio::test]
+    async fn upsert_setting_writes_only_the_requested_key() {
+        let pool = crate::db::connect(std::path::Path::new(":memory:"))
+            .await
+            .unwrap();
+        crate::db::migrate(&pool).await.unwrap();
+
+        upsert_setting(&pool, "language", "es").await.unwrap();
+        upsert_setting(&pool, "theme", "dark").await.unwrap();
+
+        let rows: Vec<(String, String)> =
+            sqlx::query_as("SELECT key, value FROM settings ORDER BY key")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+
+        assert_eq!(
+            rows,
+            vec![
+                ("language".to_string(), "es".to_string()),
+                ("theme".to_string(), "dark".to_string()),
+            ]
+        );
+    }
 }

@@ -1,33 +1,42 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 import { api, type CourseDetailDto } from '@/lib/api';
-import { formatDate, formatGrade } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
+import { TASK_STATUS_KEY, taskStatus } from '@/lib/task-status';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
+    const { t } = useTranslation();
+    const { formatDate, formatGrade } = useFormatters();
+
     return (
         <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Secciones</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('courseDetail.sections')}
+                </h3>
                 <ul className="flex flex-wrap gap-2 text-sm">
                     {detail.group.sections.map((section) => (
                         <li
                             key={section.id}
                             className="rounded-md border border-border px-3 py-1"
                         >
-                            {section.section ?? 'Sin sección'} ·{' '}
-                            {section.teacher ?? 'Sin profesor'}
+                            {section.section ?? t('courseDetail.noSection')} ·{' '}
+                            {section.teacher ?? t('courseDetail.noTeacher')}
                         </li>
                     ))}
                 </ul>
             </section>
 
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Tareas</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('courseDetail.tasks')}
+                </h3>
                 {detail.tasks.length === 0 ? (
-                    <EmptyNote>Sin tareas registradas.</EmptyNote>
+                    <EmptyNote>{t('courseDetail.noTasks')}</EmptyNote>
                 ) : (
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {detail.tasks.map((task) => (
@@ -39,7 +48,11 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                                     {task.name}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {task.status ?? 'sin datos'}
+                                    {t(
+                                        TASK_STATUS_KEY[
+                                            taskStatus(task.status) ?? 'no_data'
+                                        ],
+                                    )}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                     {formatDate(task.due_at)}
@@ -51,9 +64,11 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
             </section>
 
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Recursos</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('courseDetail.resources')}
+                </h3>
                 {detail.resources.length === 0 ? (
-                    <EmptyNote>Sin recursos descargados.</EmptyNote>
+                    <EmptyNote>{t('courseDetail.noResources')}</EmptyNote>
                 ) : (
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {detail.resources.map((resource) => (
@@ -69,7 +84,7 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                                     className="text-xs text-primary underline-offset-4 hover:underline"
                                     onClick={() => api.openInApp(resource.url)}
                                 >
-                                    Abrir
+                                    {t('common.open')}
                                 </button>
                             </li>
                         ))}
@@ -78,9 +93,11 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
             </section>
 
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Notas</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('courseDetail.grades')}
+                </h3>
                 {detail.grades.length === 0 ? (
-                    <EmptyNote>Sin notas publicadas.</EmptyNote>
+                    <EmptyNote>{t('courseDetail.noGrades')}</EmptyNote>
                 ) : (
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {detail.grades.map((grade) => (
@@ -104,15 +121,18 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
             </section>
 
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Horario</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('courseDetail.schedule')}
+                </h3>
                 {detail.schedule.length === 0 ? (
-                    <EmptyNote>Sin bloques de horario.</EmptyNote>
+                    <EmptyNote>{t('courseDetail.noSchedule')}</EmptyNote>
                 ) : (
                     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
                         {detail.schedule.map((block) => (
                             <li key={block.id} className="p-3 text-sm">
-                                {block.title} · {block.start_time} -{' '}
-                                {block.end_time} · {block.room ?? 'sin sala'}
+                                {block.title || t('schedule.classFallback')} ·{' '}
+                                {block.start_time} - {block.end_time} ·{' '}
+                                {block.room ?? t('courseDetail.noRoom')}
                             </li>
                         ))}
                     </ul>
@@ -123,6 +143,7 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
 }
 
 export function CourseDetailScreen() {
+    const { t } = useTranslation();
     const { groupId } = useParams({ strict: false }) as { groupId: string };
     const { data, error, isPending } = useQuery({
         queryKey: ['course', groupId],
@@ -131,14 +152,14 @@ export function CourseDetailScreen() {
 
     return (
         <Screen
-            title={data?.group.name ?? 'Ramo'}
+            title={data?.group.name ?? t('courseDetail.fallback')}
             subtitle={data?.group.code}
             actions={
                 <Link
                     to="/ramos"
                     className="text-sm text-primary underline-offset-4 hover:underline"
                 >
-                    Volver a Ramos
+                    {t('courseDetail.back')}
                 </Link>
             }
         >

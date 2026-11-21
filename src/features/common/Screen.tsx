@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { appError, ERROR_KEY } from '@/lib/errors';
 
 interface ScreenProps {
     title: string;
@@ -29,13 +32,21 @@ export function Screen({ title, subtitle, actions, children }: ScreenProps) {
 }
 
 export function Loading() {
-    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+    const { t } = useTranslation();
+    return (
+        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+    );
 }
 
 export function ErrorNote({ error }: { error: unknown }) {
+    const { t } = useTranslation();
+    const parsed = appError(error);
+
+    console.error(error);
+
     return (
         <p className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-            {String(error)}
+            {t(ERROR_KEY[parsed.kind])}
         </p>
     );
 }

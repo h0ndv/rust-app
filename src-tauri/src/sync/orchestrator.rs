@@ -535,7 +535,7 @@ impl SyncOrchestrator {
                 url: file.url.clone(),
                 mimetype: file.mimetype.clone(),
                 size: file.size,
-                kind: "archivo".into(),
+                kind: "file".into(),
                 sha256: None,
                 local_path: None,
                 first_seen_at: is_new.then(|| now.to_string()),
@@ -653,7 +653,7 @@ impl SyncOrchestrator {
                 .upsert_schedule_event(&ScheduleEvent {
                     id: event.id.clone(),
                     course_id,
-                    title: event.title.clone().unwrap_or_else(|| "Clase".to_string()),
+                    title: event.title.clone().unwrap_or_default(),
                     day_of_week: Some(event.day_of_week),
                     start_time: Some(event.start_time.clone()),
                     end_time: Some(event.end_time.clone()),
@@ -789,21 +789,49 @@ fn activity_status(
     let now = Utc::now().timestamp();
 
     if graded == Some(true) {
-        return "calificada";
+        return "graded";
     }
     if submitted == Some(true) {
-        return "entregada";
+        return "submitted";
     }
     if matches!(modtype, "assign" | "quiz") {
         return match due_at {
-            Some(due) if due < now => "atrasada",
-            Some(_) => "pendiente",
-            None => "sin_datos",
+            Some(due) if due < now => "overdue",
+            Some(_) => "pending",
+            None => "no_data",
         };
     }
     if due_at.is_some() {
-        "por_confirmar"
+        "unconfirmed"
     } else {
-        "informativa"
+        "informational"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::activity_status;
+
+    #[test]
+    fn activity_status_uses_canonical_codes() {
+        let past = Some(1);
+        let future = Some(4_000_000_000);
+
+        assert_eq!(
+            activity_status("assign", Some(true), None, past),
+            "submitted"
+        );
+        assert_eq!(activity_status("assign", None, Some(true), past), "graded");
+        assert_eq!(activity_status("assign", None, None, past), "overdue");
+        assert_eq!(activity_status("assign", None, None, future), "pending");
+        assert_eq!(activity_status("assign", None, None, None), "no_data");
+        assert_eq!(
+            activity_status("resource", None, None, future),
+            "unconfirmed"
+        );
+        assert_eq!(
+            activity_status("resource", None, None, None),
+            "informational"
+        );
     }
 }

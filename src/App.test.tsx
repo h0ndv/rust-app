@@ -7,6 +7,6 @@ test('starts on the welcome screen', () => {
 
     expect(screen.getByText('rust-app')).toBeInTheDocument();
     expect(
-        screen.getByRole('button', { name: /conectar con microsoft/i }),
+        screen.getByRole('button', { name: /connect with microsoft/i }),
     ).toBeInTheDocument();
 });

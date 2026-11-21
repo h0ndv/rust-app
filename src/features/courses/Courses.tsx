@@ -1,12 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 import { api, type CourseGroupDto } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 function CourseCard({ group }: { group: CourseGroupDto }) {
+    const { t } = useTranslation();
+    const { formatDate } = useFormatters();
+
     return (
         <article className="flex flex-col gap-3 rounded-xl border border-border p-4">
             <header className="flex flex-col gap-1">
@@ -23,14 +27,16 @@ function CourseCard({ group }: { group: CourseGroupDto }) {
                         className="flex flex-wrap items-center gap-2 text-sm"
                     >
                         <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">
-                            {section.section ?? 'Sección'}
+                            {section.section ?? t('courses.section')}
                         </span>
                         <span className="min-w-0 flex-1 truncate text-muted-foreground">
                             {section.teacher ?? section.fullname}
                         </span>
                         {section.pending_tasks > 0 ? (
                             <span className="text-xs text-muted-foreground">
-                                {section.pending_tasks} pendientes
+                                {t('courses.pending', {
+                                    count: section.pending_tasks,
+                                })}
                             </span>
                         ) : null}
                         {section.next_due_at ? (
@@ -47,15 +53,17 @@ function CourseCard({ group }: { group: CourseGroupDto }) {
                 params={{ groupId: group.id }}
                 className="text-sm text-primary underline-offset-4 hover:underline"
             >
-                Ver detalle
+                {t('courses.viewDetail')}
             </Link>
         </article>
     );
 }
 
 export function Courses({ groups }: { groups: CourseGroupDto[] }) {
+    const { t } = useTranslation();
+
     if (groups.length === 0) {
-        return <EmptyNote>Todavía no hay ramos sincronizados.</EmptyNote>;
+        return <EmptyNote>{t('courses.empty')}</EmptyNote>;
     }
 
     return (
@@ -68,16 +76,14 @@ export function Courses({ groups }: { groups: CourseGroupDto[] }) {
 }
 
 export function CoursesScreen() {
+    const { t } = useTranslation();
     const { data, error, isPending } = useQuery({
         queryKey: ['courses'],
         queryFn: api.listCourses,
     });
 
     return (
-        <Screen
-            title="Ramos"
-            subtitle="Todas las secciones, tengan o no aula virtual."
-        >
+        <Screen title={t('courses.title')} subtitle={t('courses.subtitle')}>
             {isPending ? (
                 <Loading />
             ) : error ? (

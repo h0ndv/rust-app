@@ -1,18 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { api, type ScheduleEventDto } from '@/lib/api';
-import { WEEKDAYS } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function Schedule({ events }: { events: ScheduleEventDto[] }) {
+    const { t } = useTranslation();
+    const { weekdays } = useFormatters();
+
     if (events.length === 0) {
-        return <EmptyNote>Todavía no hay horario sincronizado.</EmptyNote>;
+        return <EmptyNote>{t('schedule.empty')}</EmptyNote>;
     }
 
     return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-            {WEEKDAYS.map((label, index) => {
+            {weekdays.map((label, index) => {
                 const day = index + 1;
                 const blocks = events
                     .filter((event) => event.day === day)
@@ -30,7 +34,7 @@ export function Schedule({ events }: { events: ScheduleEventDto[] }) {
                         </h3>
                         {blocks.length === 0 ? (
                             <span className="text-xs text-muted-foreground">
-                                Sin clases
+                                {t('schedule.noClasses')}
                             </span>
                         ) : (
                             blocks.map((block) => (
@@ -39,13 +43,14 @@ export function Schedule({ events }: { events: ScheduleEventDto[] }) {
                                     className="flex flex-col gap-1 rounded-md bg-muted/50 p-2 text-sm"
                                 >
                                     <span className="leading-tight font-medium">
-                                        {block.title}
+                                        {block.title ||
+                                            t('schedule.classFallback')}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                         {block.start} - {block.end}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        {block.room ?? 'Sin sala'}
+                                        {block.room ?? t('schedule.noRoom')}
                                     </span>
                                     {block.instructor ? (
                                         <span className="text-xs text-muted-foreground">
@@ -63,16 +68,14 @@ export function Schedule({ events }: { events: ScheduleEventDto[] }) {
 }
 
 export function ScheduleScreen() {
+    const { t } = useTranslation();
     const { data, error, isPending } = useQuery({
         queryKey: ['schedule'],
         queryFn: api.getSchedule,
     });
 
     return (
-        <Screen
-            title="Horario"
-            subtitle="La semana tal como la entrega Ellucian."
-        >
+        <Screen title={t('schedule.title')} subtitle={t('schedule.subtitle')}>
             {isPending ? (
                 <Loading />
             ) : error ? (

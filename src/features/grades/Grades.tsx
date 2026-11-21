@@ -1,24 +1,32 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { api, type GradesDto } from '@/lib/api';
-import { formatGrade } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function Grades({ grades }: { grades: GradesDto }) {
+    const { t } = useTranslation();
+    const { formatGrade } = useFormatters();
+
     return (
         <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Nota oficial</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('grades.official')}
+                </h3>
                 {grades.banner.length === 0 ? (
-                    <EmptyNote>Sin publicar todavía.</EmptyNote>
+                    <EmptyNote>{t('grades.notPublishedYet')}</EmptyNote>
                 ) : (
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
-                                <th className="py-2">Ramo</th>
-                                <th className="py-2 text-right">Nota</th>
+                                <th className="py-2">{t('grades.course')}</th>
+                                <th className="py-2 text-right">
+                                    {t('grades.grade')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,15 +47,19 @@ export function Grades({ grades }: { grades: GradesDto }) {
             </section>
 
             <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Total Moodle</h3>
+                <h3 className="text-sm font-semibold">
+                    {t('grades.moodleTotal')}
+                </h3>
                 {grades.moodle_totals.length === 0 ? (
-                    <EmptyNote>Sin publicar todavía.</EmptyNote>
+                    <EmptyNote>{t('grades.notPublishedYet')}</EmptyNote>
                 ) : (
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
-                                <th className="py-2">Ramo</th>
-                                <th className="py-2 text-right">Total</th>
+                                <th className="py-2">{t('grades.course')}</th>
+                                <th className="py-2 text-right">
+                                    {t('grades.total')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -69,7 +81,9 @@ export function Grades({ grades }: { grades: GradesDto }) {
 
             {grades.gpa !== null ? (
                 <p className="text-sm text-muted-foreground">
-                    GPA del periodo: {formatGrade(grades.gpa)}
+                    {t('grades.termGpa', {
+                        value: formatGrade(grades.gpa),
+                    })}
                 </p>
             ) : null}
         </div>
@@ -77,6 +91,7 @@ export function Grades({ grades }: { grades: GradesDto }) {
 }
 
 export function GradesScreen() {
+    const { t } = useTranslation();
     const [term, setTerm] = useState<string | undefined>(undefined);
     const { data, error, isPending } = useQuery({
         queryKey: ['grades', term],
@@ -85,8 +100,8 @@ export function GradesScreen() {
 
     return (
         <Screen
-            title="Notas"
-            subtitle="Banner y Moodle se muestran por separado, sin promediarlos."
+            title={t('grades.title')}
+            subtitle={t('grades.subtitle')}
             actions={
                 data && data.terms.length > 1 ? (
                     <select

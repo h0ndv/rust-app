@@ -1,28 +1,46 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { LanguageSelect } from '@/components/language-select';
+import i18n, { resolveLanguage } from '@/i18n';
 import { api, type SettingsDto } from '@/lib/api';
 
 import { Loading, Screen } from '../common/Screen';
 
 const THEMES = [
-    { value: 'system', label: 'Sistema' },
-    { value: 'light', label: 'Claro' },
-    { value: 'dark', label: 'Oscuro' },
+    { value: 'system', labelKey: 'settings.themes.system' as const },
+    { value: 'light', labelKey: 'settings.themes.light' as const },
+    { value: 'dark', labelKey: 'settings.themes.dark' as const },
 ];
 
+type Status =
+    | { kind: 'saved' }
+    | { kind: 'save_failed' }
+    | { kind: 'clear_failed' }
+    | { kind: 'cleared'; count: number }
+    | null;
+
+const STATUS_KEY = {
+    saved: 'settings.saved',
+    save_failed: 'settings.saveFailed',
+    clear_failed: 'settings.clearFailed',
+} as const;
+
 export function SettingsScreen() {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
     const { data } = useQuery({
         queryKey: ['settings'],
         queryFn: api.getSettings,
     });
 
     const [form, setForm] = useState<SettingsDto | null>(null);
-    const [status, setStatus] = useState('');
+    const [status, setStatus] = useState<Status>(null);
 
     useEffect(() => {
         if (data && form === null) {
-            setForm(data);
+            setForm({ ...data, language: resolveLanguage(data.language) });
         }
     }, [data, form]);
 
@@ -32,38 +50,54 @@ export function SettingsScreen() {
         }
         try {
             await api.saveSettings(form);
-            setStatus('Ajustes guardados.');
+            queryClient.setQueryData(['settings'], form);
+            await i18n.changeLanguage(form.language);
+            document.documentElement.lang = form.language;
+            setStatus({ kind: 'saved' });
         } catch (cause) {
-            setStatus(String(cause));
+            console.error(cause);
+            setStatus({ kind: 'save_failed' });
         }
     }
 
     async function clear(): Promise<void> {
-        if (!window.confirm('Se borran los datos locales. ¿Continuar?')) {
+        if (!window.confirm(t('settings.clearConfirm'))) {
             return;
         }
         try {
             const deleted = await api.clearData();
-            setStatus(`${deleted} filas borradas.`);
+            setStatus({ kind: 'cleared', count: deleted });
         } catch (cause) {
-            setStatus(String(cause));
+            console.error(cause);
+            setStatus({ kind: 'clear_failed' });
         }
     }
 
     if (!form) {
         return (
-            <Screen title="Ajustes">
+            <Screen title={t('settings.title')}>
                 <Loading />
             </Screen>
         );
     }
 
     return (
-        <Screen title="Ajustes" subtitle="Todo se guarda en este computador.">
+        <Screen title={t('settings.title')} subtitle={t('settings.subtitle')}>
             <div className="flex max-w-md flex-col gap-4">
                 <label className="flex flex-col gap-1 text-sm">
                     <span className="font-medium">
-                        Intervalo de sincronización (minutos)
+                        {t('settings.language')}
+                    </span>
+                    <LanguageSelect
+                        className="rounded-md border border-border bg-background px-3 py-2"
+                        value={form.language}
+                        onChange={(language) => setForm({ ...form, language })}
+                    />
+                </label>
+
+                <label className="flex flex-col gap-1 text-sm">
+                    <span className="font-medium">
+                        {t('settings.syncInterval')}
                     </span>
                     <input
                         type="number"
@@ -82,7 +116,9 @@ export function SettingsScreen() {
                 </label>
 
                 <label className="flex flex-col gap-1 text-sm">
-                    <span className="font-medium">Carpeta de descargas</span>
+                    <span className="font-medium">
+                        {t('settings.downloadsDir')}
+                    </span>
                     <input
                         type="text"
                         className="rounded-md border border-border bg-background px-3 py-2"
@@ -97,7 +133,7 @@ export function SettingsScreen() {
                 </label>
 
                 <label className="flex flex-col gap-1 text-sm">
-                    <span className="font-medium">Tema</span>
+                    <span className="font-medium">{t('settings.theme')}</span>
                     <select
                         className="rounded-md border border-border bg-background px-3 py-2"
                         value={form.theme}
@@ -107,7 +143,7 @@ export function SettingsScreen() {
                     >
                         {THEMES.map((theme) => (
                             <option key={theme.value} value={theme.value}>
-                                {theme.label}
+                                {t(theme.labelKey)}
                             </option>
                         ))}
                     </select>
@@ -124,7 +160,9 @@ export function SettingsScreen() {
                             })
                         }
                     />
-                    <span className="font-medium">Avisar de vencimientos</span>
+                    <span className="font-medium">
+                        {t('settings.notifications')}
+                    </span>
                 </label>
 
                 <div className="flex flex-wrap gap-2">
@@ -133,27 +171,32 @@ export function SettingsScreen() {
                         className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
                         onClick={save}
                     >
-                        Guardar
+                        {t('settings.save')}
                     </button>
                 </div>
 
                 <section className="mt-4 flex flex-col gap-2 rounded-lg border border-destructive/40 p-4">
-                    <h3 className="text-sm font-semibold">Datos locales</h3>
+                    <h3 className="text-sm font-semibold">
+                        {t('settings.clearTitle')}
+                    </h3>
                     <p className="text-xs text-muted-foreground">
-                        Borra ramos, tareas, recursos y notas de este
-                        computador. El perfil de sesión no se toca.
+                        {t('settings.clearBody')}
                     </p>
                     <button
                         type="button"
                         className="self-start rounded-md border border-destructive px-3 py-1 text-sm text-destructive"
                         onClick={clear}
                     >
-                        Borrar datos
+                        {t('settings.clearButton')}
                     </button>
                 </section>
 
                 {status ? (
-                    <p className="text-sm text-muted-foreground">{status}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {status.kind === 'cleared'
+                            ? t('settings.cleared', { count: status.count })
+                            : t(STATUS_KEY[status.kind])}
+                    </p>
                 ) : null}
             </div>
         </Screen>

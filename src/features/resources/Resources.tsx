@@ -1,18 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { api, type ResourceDto } from '@/lib/api';
-import { formatSize } from '@/lib/format';
+import { useFormatters } from '@/lib/format';
+import { ITEM_KIND_KEY, itemKind } from '@/lib/item-kind';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
 export function Resources({ resources }: { resources: ResourceDto[] }) {
+    const { t } = useTranslation();
+    const { formatSize } = useFormatters();
+
     if (resources.length === 0) {
-        return <EmptyNote>Todavía no hay recursos sincronizados.</EmptyNote>;
+        return <EmptyNote>{t('resources.empty')}</EmptyNote>;
     }
 
     const groups = new Map<string, ResourceDto[]>();
     for (const resource of resources) {
-        const key = resource.course ?? 'Sin ramo';
+        const key = resource.course ?? t('resources.noCourse');
         groups.set(key, [...(groups.get(key) ?? []), resource]);
     }
 
@@ -31,14 +36,18 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
                                     {resource.title}
                                 </span>
                                 <span className="text-xs text-muted-foreground uppercase">
-                                    {resource.kind}
+                                    {t(
+                                        ITEM_KIND_KEY[
+                                            itemKind(resource.kind) ?? 'other'
+                                        ],
+                                    )}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                     {formatSize(resource.size)}
                                 </span>
                                 {resource.downloaded ? (
                                     <span className="text-xs text-emerald-600">
-                                        Descargado
+                                        {t('resources.downloaded')}
                                     </span>
                                 ) : (
                                     <button
@@ -48,7 +57,7 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
                                             api.downloadFile(resource.id)
                                         }
                                     >
-                                        Descargar
+                                        {t('resources.download')}
                                     </button>
                                 )}
                                 <button
@@ -56,7 +65,7 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
                                     className="text-xs text-primary underline-offset-4 hover:underline"
                                     onClick={() => api.openInApp(resource.url)}
                                 >
-                                    Abrir
+                                    {t('common.open')}
                                 </button>
                             </li>
                         ))}
@@ -68,16 +77,14 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
 }
 
 export function ResourcesScreen() {
+    const { t } = useTranslation();
     const { data, error, isPending } = useQuery({
         queryKey: ['resources'],
         queryFn: () => api.listResources('all'),
     });
 
     return (
-        <Screen
-            title="Recursos"
-            subtitle="Adjuntos de Moodle, agrupados por ramo."
-        >
+        <Screen title={t('resources.title')} subtitle={t('resources.subtitle')}>
             {isPending ? (
                 <Loading />
             ) : error ? (
