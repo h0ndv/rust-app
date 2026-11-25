@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, type ResourceDto } from '@/lib/api';
 import { useFormatters } from '@/lib/format';
 import { ITEM_KIND_KEY, itemKind } from '@/lib/item-kind';
+import { openInApp } from '@/lib/open';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
@@ -68,7 +69,7 @@ export function Resources({ resources }: { resources: ResourceDto[] }) {
                                 <button
                                     type="button"
                                     className="text-xs text-primary underline-offset-4 hover:underline"
-                                    onClick={() => api.openInApp(resource.url)}
+                                    onClick={() => void openInApp(resource.url)}
                                 >
                                     {t('common.open')}
                                 </button>

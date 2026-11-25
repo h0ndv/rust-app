@@ -65,7 +65,7 @@ All four green. A failing test you did not cause still gets reported by name.
 - Sync tests use fake sources (`tests/sync_orchestrator.rs`) and an in-memory database.
 - Frontend tests use Vitest with `jsdom`.
 
-Current totals: 77 Rust tests and 46 frontend tests.
+Current totals: 90 Rust tests and 48 frontend tests.
 
 ## 7. Conventions
 
@@ -73,8 +73,8 @@ Current totals: 77 Rust tests and 46 frontend tests.
 - Conventional Commits, English, with bullets that describe the real scope. One commit
   per task.
 - Comments only when they explain a constraint that the signature cannot.
-- Errors carry a `kind` (`network`, `unauthorized`, `parse`, `not_found`,
-  `rate_limited`, `internal`) and a technical message in English;
+- Errors carry a `kind` (`network`, `unauthorized`, `forbidden`, `parse`,
+  `not_found`, `rate_limited`, `internal`) and a technical message in English;
   the interface localizes by `kind`.
 
 ## 8. Known traps

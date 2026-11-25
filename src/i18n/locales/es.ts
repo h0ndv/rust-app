@@ -240,6 +240,7 @@ export const es: Catalog = {
     errors: {
         network: 'Error de red. Revisa tu conexión e inténtalo de nuevo.',
         unauthorized: 'Tu sesión venció. Vuelve a conectar.',
+        forbidden: 'Este enlace apunta fuera de los sitios de confianza.',
         parse: 'La fuente devolvió una respuesta inesperada.',
         not_found: 'No encontrado.',
         rate_limited: 'Se agotó el límite de peticiones de esta corrida.',

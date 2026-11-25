@@ -9,7 +9,6 @@ pub use dto::*;
 pub use sync::*;
 
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
-use url::Url;
 
 use crate::error::AppError;
 use crate::state::AppState;
@@ -17,18 +16,23 @@ use crate::sync::Downloads;
 
 pub type Cmd<T> = Result<T, AppError>;
 
+pub const BROWSER_WINDOW: &str = "browser";
+
 #[tauri::command]
 pub async fn open_in_app(app: AppHandle, url: String) -> Cmd<()> {
-    let parsed =
-        Url::parse(&url).map_err(|error| AppError::Internal(format!("url inválida: {error}")))?;
+    let parsed = crate::security::parse_trusted(&url)?;
 
-    let window = match app.get_webview_window("browser") {
+    let window = match app.get_webview_window(BROWSER_WINDOW) {
         Some(window) => window,
-        None => WebviewWindowBuilder::new(&app, "browser", WebviewUrl::External(parsed.clone()))
-            .title("rust-app")
-            .inner_size(1100.0, 800.0)
-            .build()
-            .map_err(|error| AppError::Internal(error.to_string()))?,
+        None => {
+            WebviewWindowBuilder::new(&app, BROWSER_WINDOW, WebviewUrl::External(parsed.clone()))
+                .title("rust-app")
+                .inner_size(1100.0, 800.0)
+                .on_navigation(crate::security::trusted_source_url)
+                .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
+                .build()
+                .map_err(|error| AppError::Internal(error.to_string()))?
+        }
     };
 
     window

@@ -239,6 +239,7 @@ export const en = {
     errors: {
         network: 'Network error. Check your connection and try again.',
         unauthorized: 'Your session expired. Connect again.',
+        forbidden: "This link points outside the app's trusted sites.",
         parse: 'The source returned an unexpected response.',
         not_found: 'Not found.',
         rate_limited: 'The request limit for this run was reached.',

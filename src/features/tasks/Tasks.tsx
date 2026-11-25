@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { api, type TaskDto, type TaskFilter } from '@/lib/api';
 import { useFormatters } from '@/lib/format';
+import { openInApp } from '@/lib/open';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
@@ -73,7 +74,7 @@ function TaskRow({ task }: { task: TaskDto }) {
                 <button
                     type="button"
                     className="text-xs text-primary underline-offset-4 hover:underline"
-                    onClick={() => api.openInApp(task.url as string)}
+                    onClick={() => void openInApp(task.url as string)}
                 >
                     {t('common.open')}
                 </button>

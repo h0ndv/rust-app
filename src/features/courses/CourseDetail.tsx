@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { api, type CourseDetailDto } from '@/lib/api';
 import { useFormatters } from '@/lib/format';
+import { openInApp } from '@/lib/open';
 import { TASK_STATUS_KEY, taskStatus } from '@/lib/task-status';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
@@ -87,7 +88,7 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                                 <button
                                     type="button"
                                     className="text-xs text-primary underline-offset-4 hover:underline"
-                                    onClick={() => api.openInApp(resource.url)}
+                                    onClick={() => void openInApp(resource.url)}
                                 >
                                     {t('common.open')}
                                 </button>

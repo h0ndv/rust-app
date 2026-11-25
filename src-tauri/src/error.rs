@@ -7,6 +7,8 @@ pub enum AppError {
     Network(String),
     #[error("Session expired or not authorized")]
     Unauthorized,
+    #[error("Link not allowed")]
+    Forbidden,
     #[error("Unexpected response: {0}")]
     Parse(String),
     #[error("Not found")]
@@ -22,6 +24,7 @@ impl AppError {
         match self {
             AppError::Network(_) => "network",
             AppError::Unauthorized => "unauthorized",
+            AppError::Forbidden => "forbidden",
             AppError::Parse(_) => "parse",
             AppError::NotFound => "not_found",
             AppError::RateLimited => "rate_limited",
@@ -55,6 +58,7 @@ mod tests {
         let casos = [
             (AppError::Network("dns".into()), "network"),
             (AppError::Unauthorized, "unauthorized"),
+            (AppError::Forbidden, "forbidden"),
             (AppError::Parse("html".into()), "parse"),
             (AppError::NotFound, "not_found"),
             (AppError::RateLimited, "rate_limited"),

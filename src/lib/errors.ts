@@ -1,6 +1,7 @@
 export const ERROR_KINDS = [
     'network',
     'unauthorized',
+    'forbidden',
     'parse',
     'not_found',
     'rate_limited',
@@ -17,6 +18,7 @@ export interface AppErrorPayload {
 export const ERROR_KEY = {
     network: 'errors.network',
     unauthorized: 'errors.unauthorized',
+    forbidden: 'errors.forbidden',
     parse: 'errors.parse',
     not_found: 'errors.not_found',
     rate_limited: 'errors.rate_limited',

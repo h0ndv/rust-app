@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::{Datelike, Duration, Local, Utc};
 use sqlx::FromRow;
 use tauri::State;
 
@@ -238,6 +238,24 @@ async fn load_schedule(state: &AppState) -> Cmd<Vec<ScheduleEventDto>> {
     Ok(rows.into_iter().map(ScheduleEventDto::from).collect())
 }
 
+/// Orders the week from `today` (1 = Monday) and wraps into the next one, so a
+/// Friday still sees Monday's class ahead.
+fn next_classes(mut schedule: Vec<ScheduleEventDto>, today: i64) -> Vec<ScheduleEventDto> {
+    schedule.retain(|event| event.day.is_some_and(|day| (1..=7).contains(&day)));
+
+    let offset = |event: &ScheduleEventDto| {
+        let day = event.day.unwrap_or(today);
+        (day - today).rem_euclid(7)
+    };
+    schedule.sort_by(|left, right| {
+        offset(left)
+            .cmp(&offset(right))
+            .then_with(|| left.start.cmp(&right.start))
+    });
+
+    schedule
+}
+
 #[tauri::command]
 pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
     let now = Utc::now().timestamp();
@@ -256,16 +274,9 @@ pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
         .collect();
 
     let schedule = load_schedule(&state).await?;
-    let today = Utc::now()
-        .format("%u")
-        .to_string()
-        .parse::<i64>()
-        .unwrap_or(1);
-    let next_classes: Vec<ScheduleEventDto> = schedule
-        .into_iter()
-        .filter(|event| event.day.is_some_and(|day| day >= today))
-        .take(5)
-        .collect();
+    let today = Local::now().weekday().number_from_monday() as i64;
+    let upcoming: Vec<ScheduleEventDto> =
+        next_classes(schedule, today).into_iter().take(5).collect();
 
     let new_resources: Vec<ResourceDto> = load_resources(&state)
         .await?
@@ -277,7 +288,7 @@ pub async fn get_dashboard(state: State<'_, AppState>) -> Cmd<DashboardDto> {
     Ok(DashboardDto {
         overdue,
         due_soon,
-        next_classes,
+        next_classes: upcoming,
         new_resources,
     })
 }
@@ -607,6 +618,48 @@ mod tests {
             normalize_schedule_title("Minería de Datos"),
             "Minería de Datos"
         );
+    }
+
+    fn class(day: i64, start: &str) -> ScheduleEventDto {
+        ScheduleEventDto {
+            title: format!("clase {day} {start}"),
+            day: Some(day),
+            start: Some(start.to_string()),
+            ..Default::default()
+        }
+    }
+
+    fn days(schedule: &[ScheduleEventDto]) -> Vec<Option<i64>> {
+        schedule.iter().map(|event| event.day).collect()
+    }
+
+    #[test]
+    fn wraps_next_classes_into_the_next_week() {
+        let schedule = vec![class(1, "08:00"), class(3, "10:00"), class(5, "09:00")];
+
+        let ordered = next_classes(schedule, 5);
+
+        assert_eq!(days(&ordered), vec![Some(5), Some(1), Some(3)]);
+    }
+
+    #[test]
+    fn keeps_classes_of_the_current_day_in_time_order() {
+        let schedule = vec![class(2, "12:00"), class(2, "08:00"), class(4, "09:00")];
+
+        let ordered = next_classes(schedule, 2);
+
+        let starts: Vec<Option<&str>> =
+            ordered.iter().map(|event| event.start.as_deref()).collect();
+        assert_eq!(starts, vec![Some("08:00"), Some("12:00"), Some("09:00")]);
+    }
+
+    #[test]
+    fn drops_classes_without_a_weekday() {
+        let schedule = vec![ScheduleEventDto::default(), class(2, "08:00")];
+
+        let ordered = next_classes(schedule, 1);
+
+        assert_eq!(days(&ordered), vec![Some(2)]);
     }
 
     #[tokio::test]

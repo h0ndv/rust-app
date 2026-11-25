@@ -7,6 +7,7 @@ pub mod error;
 pub mod events;
 pub mod http;
 pub mod moodle;
+pub mod security;
 pub mod state;
 pub mod sync;
 
@@ -33,6 +34,19 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
+            let main_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|window| window.label == auth::MAIN_WINDOW)
+                .expect("main window config");
+
+            tauri::WebviewWindowBuilder::from_config(app.handle(), main_config)?
+                .on_navigation(|url| crate::security::app_url(url, tauri::is_dev()))
+                .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
+                .build()?;
+
             let handle = app.handle().clone();
             let emitter = tauri_emitter(handle.clone());
             let session = Arc::new(SessionManager::new(
