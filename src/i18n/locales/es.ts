@@ -108,7 +108,7 @@ export const es: Catalog = {
     },
     courseDetail: {
         fallback: 'Ramo',
-        back: 'Volver a Ramos',
+        back: 'Volver',
         sections: 'Secciones',
         noSection: 'Sin sección',
         noTeacher: 'Sin profesor',
@@ -212,6 +212,12 @@ export const es: Catalog = {
         save: 'Guardar',
         saved: 'Ajustes guardados.',
         saveFailed: 'No se pudieron guardar los ajustes.',
+        exportTitle: 'Exportar',
+        exportBody:
+            'Guarda una copia JSON de los datos de este equipo. No es un respaldo restaurable.',
+        exportButton: 'Exportar datos',
+        exported: 'Exportación guardada en {{path}}',
+        exportFailed: 'No se pudieron exportar los datos.',
         clearTitle: 'Datos locales',
         clearBody:
             'Borra ramos, tareas, recursos y notas de este computador. El perfil de sesión no se toca.',
@@ -221,6 +227,12 @@ export const es: Catalog = {
         cleared_one: '{{count}} fila borrada.',
         cleared_other: '{{count}} filas borradas.',
         clearFailed: 'No se pudieron borrar los datos locales.',
+        clearDownloadsButton: 'Borrar archivos descargados',
+        clearDownloadsConfirm:
+            'Se borran los archivos descargados del disco. El catálogo local queda. ¿Continuar?',
+        downloadsCleared_one: '{{count}} archivo borrado.',
+        downloadsCleared_other: '{{count}} archivos borrados.',
+        clearDownloadsFailed: 'No se pudieron borrar los archivos descargados.',
     },
     status: {
         overdue: 'Atrasada',
@@ -237,6 +249,11 @@ export const es: Catalog = {
         file: 'Archivo',
         activity: 'Actividad',
         other: 'Otro',
+    },
+    recovery: {
+        title: 'Se restablecieron los datos locales',
+        body: 'No se pudo abrir la base de datos. El archivo anterior se movió a {{path}}. Los archivos descargados antes siguen en la carpeta de descargas.',
+        dismiss: 'Descartar',
     },
     errors: {
         network: 'Error de red. Revisa tu conexión e inténtalo de nuevo.',

@@ -22,6 +22,10 @@ type Status =
     | { kind: 'clear_failed' }
     | { kind: 'notifications_denied' }
     | { kind: 'cleared'; count: number }
+    | { kind: 'downloads_cleared'; count: number }
+    | { kind: 'exported'; path: string }
+    | { kind: 'export_failed' }
+    | { kind: 'clear_downloads_failed' }
     | null;
 
 const STATUS_KEY = {
@@ -29,6 +33,8 @@ const STATUS_KEY = {
     save_failed: 'settings.saveFailed',
     clear_failed: 'settings.clearFailed',
     notifications_denied: 'settings.notificationsDenied',
+    export_failed: 'settings.exportFailed',
+    clear_downloads_failed: 'settings.clearDownloadsFailed',
 } as const;
 
 export function SettingsScreen() {
@@ -81,10 +87,35 @@ export function SettingsScreen() {
         }
         try {
             const deleted = await api.clearData();
+            await queryClient.invalidateQueries();
             setStatus({ kind: 'cleared', count: deleted });
         } catch (cause) {
             console.error(cause);
             setStatus({ kind: 'clear_failed' });
+        }
+    }
+
+    async function exportData(): Promise<void> {
+        try {
+            const path = await api.exportData();
+            setStatus({ kind: 'exported', path });
+        } catch (cause) {
+            console.error(cause);
+            setStatus({ kind: 'export_failed' });
+        }
+    }
+
+    async function clearDownloads(): Promise<void> {
+        if (!window.confirm(t('settings.clearDownloadsConfirm'))) {
+            return;
+        }
+        try {
+            const removed = await api.clearDownloads();
+            await queryClient.invalidateQueries({ queryKey: ['resources'] });
+            setStatus({ kind: 'downloads_cleared', count: removed });
+        } catch (cause) {
+            console.error(cause);
+            setStatus({ kind: 'clear_downloads_failed' });
         }
     }
 
@@ -190,6 +221,22 @@ export function SettingsScreen() {
                     </button>
                 </div>
 
+                <section className="mt-4 flex flex-col gap-2 rounded-lg border border-border p-4">
+                    <h3 className="text-sm font-semibold">
+                        {t('settings.exportTitle')}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                        {t('settings.exportBody')}
+                    </p>
+                    <button
+                        type="button"
+                        className="self-start rounded-md border border-border px-3 py-1 text-sm"
+                        onClick={() => void exportData()}
+                    >
+                        {t('settings.exportButton')}
+                    </button>
+                </section>
+
                 <section className="mt-4 flex flex-col gap-2 rounded-lg border border-destructive/40 p-4">
                     <h3 className="text-sm font-semibold">
                         {t('settings.clearTitle')}
@@ -204,13 +251,26 @@ export function SettingsScreen() {
                     >
                         {t('settings.clearButton')}
                     </button>
+                    <button
+                        type="button"
+                        className="self-start rounded-md border border-destructive px-3 py-1 text-sm text-destructive"
+                        onClick={() => void clearDownloads()}
+                    >
+                        {t('settings.clearDownloadsButton')}
+                    </button>
                 </section>
 
                 {status ? (
                     <p className="text-sm text-muted-foreground">
                         {status.kind === 'cleared'
                             ? t('settings.cleared', { count: status.count })
-                            : t(STATUS_KEY[status.kind])}
+                            : status.kind === 'downloads_cleared'
+                              ? t('settings.downloadsCleared', {
+                                    count: status.count,
+                                })
+                              : status.kind === 'exported'
+                                ? t('settings.exported', { path: status.path })
+                                : t(STATUS_KEY[status.kind])}
                     </p>
                 ) : null}
             </div>

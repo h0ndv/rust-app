@@ -38,3 +38,18 @@ it('focuses a file row', () => {
         'true',
     );
 });
+
+it('focuses a row that arrives after the first render', () => {
+    const { rerender } = render(
+        <CourseDetail detail={{ ...detail, tasks: [] }} focus="a1" />,
+    );
+    expect(scroll).not.toHaveBeenCalled();
+
+    rerender(<CourseDetail detail={detail} focus="a1" />);
+
+    expect(screen.getByText('Laboratorio 1').closest('li')).toHaveAttribute(
+        'aria-current',
+        'true',
+    );
+    expect(scroll).toHaveBeenCalled();
+});

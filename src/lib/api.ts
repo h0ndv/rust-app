@@ -142,6 +142,11 @@ export interface SearchResultsDto {
     items: SearchHitDto[];
 }
 
+export interface RecoveryNoticeDto {
+    backup_path: string;
+    reason: string;
+}
+
 export interface SettingsDto {
     sync_interval_minutes: number;
     downloads_dir: string;
@@ -235,6 +240,7 @@ export const api = {
     search: (query: string) => invoke<SearchResultsDto>('search', { query }),
 
     getSettings: () => invoke<SettingsDto>('get_settings'),
+    recoveryNotice: () => invoke<RecoveryNoticeDto | null>('recovery_notice'),
     saveSettings: (settings: SettingsDto) =>
         invoke<void>('save_settings', { settings }),
     setLanguage: (language: string) =>
@@ -243,4 +249,6 @@ export const api = {
     openInApp: (url: string) => invoke<void>('open_in_app', { url }),
     downloadFile: (fileId: string) => invoke<void>('download_file', { fileId }),
     clearData: () => invoke<number>('clear_data'),
+    exportData: () => invoke<string>('export_data'),
+    clearDownloads: () => invoke<number>('clear_downloads'),
 };

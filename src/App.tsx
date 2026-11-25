@@ -3,6 +3,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { RecoveryBanner } from './app/RecoveryBanner';
 import { router } from './app/router';
 import {
     STEP_ORDER,
@@ -12,7 +13,7 @@ import {
     Onboarding,
     type OnboardingState,
 } from './features/onboarding/Onboarding';
-import { api, type Source } from './lib/api';
+import { api, type RecoveryNoticeDto, type Source } from './lib/api';
 import { appError, type ErrorKind } from './lib/errors';
 
 const STALL_MS = 90_000;
@@ -38,21 +39,24 @@ function App() {
     const [failedSource, setFailedSource] = useState<Source>();
     const [stalledSource, setStalledSource] = useState<Source>();
     const [error, setError] = useState<ErrorKind>();
+    const [recovery, setRecovery] = useState<RecoveryNoticeDto | null>(null);
 
     useEffect(() => {
         let alive = true;
 
         void (async () => {
             try {
-                const [hasData, session] = await Promise.all([
+                const [hasData, session, notice] = await Promise.all([
                     api.hasLocalData().catch(() => false),
                     api
                         .sessionState()
                         .catch(() => ({ state: 'disconnected' }) as const),
+                    api.recoveryNotice().catch(() => null),
                 ]);
                 if (!alive) {
                     return;
                 }
+                setRecovery(notice);
                 setMode(
                     hasData || session.state !== 'disconnected'
                         ? 'app'
@@ -124,35 +128,48 @@ function App() {
         }
     }
 
+    const banner = recovery ? (
+        <RecoveryBanner notice={recovery} onDismiss={() => setRecovery(null)} />
+    ) : null;
+
     if (mode === 'loading') {
         return (
-            <main className="flex min-h-svh items-center justify-center bg-background p-6">
-                <p className="text-sm text-muted-foreground">
-                    {t('common.loading')}
-                </p>
-            </main>
+            <>
+                {banner}
+                <main className="flex min-h-svh items-center justify-center bg-background p-6">
+                    <p className="text-sm text-muted-foreground">
+                        {t('common.loading')}
+                    </p>
+                </main>
+            </>
         );
     }
 
     if (mode === 'onboarding') {
         return (
-            <Onboarding
-                state={state}
-                steps={steps}
-                failedSource={failedSource}
-                stalledSource={stalledSource}
-                error={error}
-                onConnect={connectAll}
-                onRetry={retry}
-                onContinue={() => setMode('app')}
-            />
+            <>
+                {banner}
+                <Onboarding
+                    state={state}
+                    steps={steps}
+                    failedSource={failedSource}
+                    stalledSource={stalledSource}
+                    error={error}
+                    onConnect={connectAll}
+                    onRetry={retry}
+                    onContinue={() => setMode('app')}
+                />
+            </>
         );
     }
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-        </QueryClientProvider>
+        <>
+            {banner}
+            <QueryClientProvider client={queryClient}>
+                <RouterProvider router={router} />
+            </QueryClientProvider>
+        </>
     );
 }
 

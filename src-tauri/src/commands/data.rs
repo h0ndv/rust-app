@@ -568,9 +568,7 @@ pub async fn get_settings(state: State<'_, AppState>) -> Cmd<SettingsDto> {
     settings.language = normalize_language(&settings.language);
 
     if settings.downloads_dir.is_empty() {
-        settings.downloads_dir = std::env::var("USERPROFILE")
-            .map(|home| format!("{home}\\Downloads\\rust-app"))
-            .unwrap_or_default();
+        settings.downloads_dir = state.downloads_fallback.display().to_string();
     }
 
     Ok(settings)

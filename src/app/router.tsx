@@ -42,12 +42,18 @@ const coursesRoute = createRoute({
 
 export type CourseSearch = { focus?: string };
 
+export function parseCourseSearch(
+    search: Record<string, unknown>,
+): CourseSearch {
+    return {
+        focus: typeof search.focus === 'string' ? search.focus : undefined,
+    };
+}
+
 const courseDetailRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/ramos/$groupId',
-    validateSearch: (search: Record<string, unknown>): CourseSearch => ({
-        focus: typeof search.focus === 'string' ? search.focus : undefined,
-    }),
+    validateSearch: parseCourseSearch,
     component: CourseDetailScreen,
 });
 

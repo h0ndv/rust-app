@@ -5,6 +5,7 @@ pub mod db;
 pub mod ellucian;
 pub mod error;
 pub mod events;
+pub mod export;
 pub mod http;
 pub mod moodle;
 pub mod security;
@@ -57,8 +58,8 @@ pub fn run() {
             app.manage(Arc::clone(&session));
 
             let data_dir = app.path().app_data_dir()?;
-            let pool = tauri::async_runtime::block_on(db::connect(&data_dir.join("panel.db")))?;
-            tauri::async_runtime::block_on(db::migrate(&pool))?;
+            let (pool, recovery) =
+                tauri::async_runtime::block_on(db::open_with_recovery(&data_dir.join("panel.db")))?;
 
             let repo = Repo::new(pool.clone());
             let http = HttpClient::new(auth::USER_AGENT);
@@ -75,9 +76,10 @@ pub fn run() {
             sync.spawn_scheduler();
 
             let folder = downloads_folder(&data_dir);
-            let downloads = Downloads::new(repo.clone(), live, folder, Some(emitter));
+            let downloads = Downloads::new(repo.clone(), live, folder.clone(), Some(emitter));
 
-            app.manage(AppState::new(pool, repo, Arc::clone(&sync)));
+            app.manage(AppState::new(pool, repo, Arc::clone(&sync), folder));
+            app.manage(recovery);
             app.manage(sync);
             app.manage(downloads);
 
@@ -115,6 +117,9 @@ pub fn run() {
             commands::set_language,
             commands::open_in_app,
             commands::download_file,
+            commands::export_data,
+            commands::clear_downloads,
+            commands::recovery_notice,
             commands::clear_data
         ])
         .run(tauri::generate_context!())

@@ -65,7 +65,7 @@ test('marks an item as read', async () => {
 test('links an activity to its course and focus', async () => {
     await renderNews([activity]);
 
-    expect(screen.getByRole('link', { name: /open course/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Lab 1' })).toHaveAttribute(
         'href',
         '/ramos/g1?focus=a1',
     );
@@ -74,7 +74,7 @@ test('links an activity to its course and focus', async () => {
 test('links a file to its course and focus', async () => {
     await renderNews([file]);
 
-    expect(screen.getByRole('link', { name: /open course/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Guia' })).toHaveAttribute(
         'href',
         '/ramos/g1?focus=f1',
     );
@@ -83,7 +83,7 @@ test('links a file to its course and focus', async () => {
 test('links an announcement without a focus', async () => {
     await renderNews([announcement]);
 
-    expect(screen.getByRole('link', { name: /open course/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Announcement' })).toHaveAttribute(
         'href',
         '/ramos/g1',
     );

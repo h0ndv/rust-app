@@ -106,7 +106,7 @@ export const en = {
     },
     courseDetail: {
         fallback: 'Course',
-        back: 'Back to courses',
+        back: 'Back',
         sections: 'Sections',
         noSection: 'No section',
         noTeacher: 'No teacher',
@@ -211,6 +211,12 @@ export const en = {
         save: 'Save',
         saved: 'Settings saved.',
         saveFailed: 'Could not save settings.',
+        exportTitle: 'Export',
+        exportBody:
+            'Saves a JSON copy of the data stored on this computer. It is not a restorable backup.',
+        exportButton: 'Export data',
+        exported: 'Export saved to {{path}}',
+        exportFailed: 'Could not export the data.',
         clearTitle: 'Local data',
         clearBody:
             'Deletes courses, tasks, resources and grades from this computer. The session profile is not touched.',
@@ -220,6 +226,12 @@ export const en = {
         cleared_one: '{{count}} row deleted.',
         cleared_other: '{{count}} rows deleted.',
         clearFailed: 'Could not delete local data.',
+        clearDownloadsButton: 'Clear downloaded files',
+        clearDownloadsConfirm:
+            'Downloaded files will be deleted from disk. The local catalogue stays. Continue?',
+        downloadsCleared_one: '{{count}} file deleted.',
+        downloadsCleared_other: '{{count}} files deleted.',
+        clearDownloadsFailed: 'Could not clear the downloaded files.',
     },
     status: {
         overdue: 'Overdue',
@@ -236,6 +248,11 @@ export const en = {
         file: 'File',
         activity: 'Activity',
         other: 'Other',
+    },
+    recovery: {
+        title: 'Local data was reset',
+        body: 'The database could not be opened. The old file was moved to {{path}}. Previously downloaded files remain in the downloads folder.',
+        dismiss: 'Dismiss',
     },
     errors: {
         network: 'Network error. Check your connection and try again.',

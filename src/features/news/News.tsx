@@ -47,7 +47,7 @@ export function News({ items }: { items: NewsItemDto[] }) {
                                             ? {}
                                             : { focus: item.id }
                                     }
-                                    aria-label={t('common.openCourse')}
+                                    title={t('common.openCourse')}
                                     className="underline-offset-4 hover:underline"
                                 >
                                     {item.title}

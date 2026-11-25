@@ -65,7 +65,7 @@ All four green. A failing test you did not cause still gets reported by name.
 - Sync tests use fake sources (`tests/sync_orchestrator.rs`) and an in-memory database.
 - Frontend tests use Vitest with `jsdom`.
 
-Current totals: 90 Rust tests and 48 frontend tests.
+Current totals: 101 Rust tests and 62 frontend tests.
 
 ## 7. Conventions
 
@@ -99,12 +99,14 @@ reason.
 
 ## 9. Data locations
 
-| What      | Where                                                  |
-| --------- | ------------------------------------------------------ |
-| Database  | `%APPDATA%\com.santotomas.rustapp\panel.db` (WAL mode) |
-| Downloads | `%USERPROFILE%\Downloads\rust-app`                     |
-| Cookies   | WebView2 profile, never copied out                     |
-| Logs      | stderr; `tracing` honours `RUST_LOG`                   |
+| What              | Where                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| Database          | `%APPDATA%\com.santotomas.rustapp\panel.db` (WAL mode)          |
+| Downloads         | `%USERPROFILE%\Downloads\rust-app`                              |
+| Exports           | `<downloads_dir>\rust-app-export-<timestamp>.json`              |
+| Corrupt DB backup | `%APPDATA%\com.santotomas.rustapp\panel.db.corrupt-<timestamp>` |
+| Cookies           | WebView2 profile, never copied out                              |
+| Logs              | stderr; `tracing` honours `RUST_LOG`                            |
 
 ## 10. Status
 

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -26,7 +26,7 @@ export function CourseDetail({
                 .getElementById(`focus-${focus}`)
                 ?.scrollIntoView({ block: 'center' });
         }
-    }, [focus]);
+    }, [detail, focus]);
 
     return (
         <div className="flex flex-col gap-8">
@@ -177,6 +177,7 @@ export function CourseDetail({
 
 export function CourseDetailScreen() {
     const { t } = useTranslation();
+    const router = useRouter();
     const { groupId } = useParams({ strict: false }) as { groupId: string };
     const { focus } = useSearch({ from: '/ramos/$groupId' });
     const { data, error, isPending } = useQuery({
@@ -189,12 +190,13 @@ export function CourseDetailScreen() {
             title={data?.group.name ?? t('courseDetail.fallback')}
             subtitle={data?.group.code}
             actions={
-                <Link
-                    to="/ramos"
+                <button
+                    type="button"
                     className="text-sm text-primary underline-offset-4 hover:underline"
+                    onClick={() => router.history.back()}
                 >
                     {t('courseDetail.back')}
-                </Link>
+                </button>
             }
         >
             {isPending ? (

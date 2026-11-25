@@ -214,7 +214,7 @@ appear under the same card with two sections.
 
 ## 10. Commands and DTOs
 
-`commands/` exposes 23 commands. Reads return DTOs from `commands/dto.rs`; the UI never
+`commands/` exposes 26 commands. Reads return DTOs from `commands/dto.rs`; the UI never
 sees database models.
 
 | Group    | Commands                                                                                                                                              |
@@ -223,7 +223,7 @@ sees database models.
 | Sync     | `start_sync`, `cancel_sync`, `sync_status`                                                                                                            |
 | Reads    | `get_dashboard`, `has_local_data`, `list_courses`, `get_course`, `list_tasks`, `list_resources`, `list_grades`, `get_schedule`, `list_news`, `search` |
 | Settings | `get_settings`, `save_settings`, `set_language`                                                                                                       |
-| Actions  | `acknowledge`, `open_in_app`, `download_file`, `clear_data`                                                                                           |
+| Actions  | `acknowledge`, `open_in_app`, `download_file`, `export_data`, `clear_downloads`, `recovery_notice`, `clear_data`                                      |
 
 Filters (`TaskFilter`, `ResourceFilter`) travel lowercase so the JSON stays
 `"overdue"`, `"new"`. `no_data` is spelled out in the enum because the lowercase rename
@@ -248,19 +248,22 @@ Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finish
 
 ## 11. Decisions and tradeoffs
 
-| Decision                                                                | Alternative                          | Why                                                                 | Cost if wrong                                           |
-| ----------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------- |
-| One trait per source (`MoodleSource`, `EllucianSource`, `BannerSource`) | A single `Sources` trait             | A new source is additive; a test fakes only what it needs           | Three traits instead of one                             |
-| `SyncDeps` struct                                                       | Five constructor arguments           | New dependencies do not change signatures                           | One more struct                                         |
-| Injected `EventEmitter`                                                 | `AppHandle` inside the orchestrator  | Keeps Tauri out of the library and test binaries                    | One closure in `lib.rs`                                 |
-| `async-trait`                                                           | Hand-written `BoxFuture`             | `dyn` needs boxing anyway; the macro removes 13 signatures of noise | One proc-macro dependency                               |
-| No foreign keys                                                         | `REFERENCES` + `ON DELETE CASCADE`   | Sync writes sources before the union                                | Orphan rows that archiving already tolerates            |
-| `last_seen_at` column                                                   | Reuse `first_seen_at`                | 7-day archiving needs the last time an item was seen                | One migration                                           |
-| Resources are files, not pages                                          | Fetch `mod/resource/view.php`        | The page redirects to the PDF; reading it as text hung the sync     | Attachment metadata comes from the link instead         |
-| Baseline per course                                                     | Global first run                     | A new course added mid-semester should not flood Novedades          | A newly added course never marks its first items as new |
-| Frontend-owned i18n catalogs                                            | Rust-localized messages              | UI copy and `Intl` formatting change with the interface             | A catalog per language                                  |
-| CSP plus a three-host allowlist                                         | Trust every URL the adapters produce | The browser window shares the authenticated WebView2 profile        | A source link outside those hosts is blocked by design  |
-| Deep links carry the course group and an optional focus                 | Resolve ids inside the route         | Search and Novedades already join the source tables                 | A hit without a course stays unlinked                   |
+| Decision                                                                | Alternative                          | Why                                                                 | Cost if wrong                                                  |
+| ----------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| One trait per source (`MoodleSource`, `EllucianSource`, `BannerSource`) | A single `Sources` trait             | A new source is additive; a test fakes only what it needs           | Three traits instead of one                                    |
+| `SyncDeps` struct                                                       | Five constructor arguments           | New dependencies do not change signatures                           | One more struct                                                |
+| Injected `EventEmitter`                                                 | `AppHandle` inside the orchestrator  | Keeps Tauri out of the library and test binaries                    | One closure in `lib.rs`                                        |
+| `async-trait`                                                           | Hand-written `BoxFuture`             | `dyn` needs boxing anyway; the macro removes 13 signatures of noise | One proc-macro dependency                                      |
+| No foreign keys                                                         | `REFERENCES` + `ON DELETE CASCADE`   | Sync writes sources before the union                                | Orphan rows that archiving already tolerates                   |
+| `last_seen_at` column                                                   | Reuse `first_seen_at`                | 7-day archiving needs the last time an item was seen                | One migration                                                  |
+| Resources are files, not pages                                          | Fetch `mod/resource/view.php`        | The page redirects to the PDF; reading it as text hung the sync     | Attachment metadata comes from the link instead                |
+| Baseline per course                                                     | Global first run                     | A new course added mid-semester should not flood Novedades          | A newly added course never marks its first items as new        |
+| Frontend-owned i18n catalogs                                            | Rust-localized messages              | UI copy and `Intl` formatting change with the interface             | A catalog per language                                         |
+| CSP plus a three-host allowlist                                         | Trust every URL the adapters produce | The browser window shares the authenticated WebView2 profile        | A source link outside those hosts is blocked by design         |
+| Deep links carry the course group and an optional focus                 | Resolve ids inside the route         | Search and Novedades already join the source tables                 | A hit without a course stays unlinked                          |
+| JSON snapshot of the durable tables                                     | Dump the SQLite file                 | A portable export does not need the WAL or the FTS index            | The search index and run logs are excluded; there is no import |
+| Clear only the recorded download paths                                  | Wipe the downloads folder            | The folder is user-configurable and may be broad                    | A file not recorded in the database is left alone              |
+| Move a corrupt database aside                                           | Delete it and start over             | The old file is the only way to recover data                        | A backup file stays beside the database                        |
 
 ## 12. Extension points
 

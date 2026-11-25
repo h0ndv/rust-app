@@ -210,7 +210,12 @@ async fn test_state_with_moodle(moodle: Arc<dyn MoodleSource>) -> AppState {
         emitter: None,
     };
 
-    AppState::new(pool, repo, Arc::new(SyncOrchestrator::new(deps)))
+    AppState::new(
+        pool,
+        repo,
+        Arc::new(SyncOrchestrator::new(deps)),
+        std::env::temp_dir(),
+    )
 }
 
 async fn test_state() -> AppState {

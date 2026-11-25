@@ -657,6 +657,22 @@ impl Repo {
             .map_err(|e| AppError::Internal(format!("could not save the path: {e}")))
             .map(|_| ())
     }
+
+    pub async fn downloaded_paths(&self) -> Result<Vec<(String, String)>, AppError> {
+        sqlx::query_as("SELECT id, local_path FROM files WHERE local_path IS NOT NULL")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| AppError::Internal(format!("could not read downloaded files: {e}")))
+    }
+
+    pub async fn clear_downloaded(&self, id: &str) -> Result<(), AppError> {
+        sqlx::query("UPDATE files SET local_path = NULL WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| AppError::Internal(format!("could not clear the downloaded file: {e}")))
+            .map(|_| ())
+    }
 }
 
 impl Repo {

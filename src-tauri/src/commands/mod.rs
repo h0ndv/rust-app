@@ -1,10 +1,12 @@
 pub mod auth;
 pub mod data;
+pub mod data_safety;
 pub mod dto;
 pub mod sync;
 
 pub use auth::*;
 pub use data::*;
+pub use data_safety::*;
 pub use dto::*;
 pub use sync::*;
 
@@ -70,6 +72,9 @@ const CLEAR_ORDER: [&str; 14] = [
 #[tauri::command]
 pub async fn clear_data(state: State<'_, AppState>) -> Cmd<u64> {
     let mut deleted = 0u64;
+
+    let paths = state.repo.downloaded_paths().await?;
+    let _ = clear_recorded_paths(&paths).await;
 
     for table in CLEAR_ORDER {
         let result = sqlx::query(&format!("DELETE FROM {table}"))

@@ -153,6 +153,12 @@ pub struct SearchResultsDto {
     pub items: Vec<SearchHitDto>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct RecoveryDto {
+    pub backup_path: String,
+    pub reason: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SettingsDto {
     pub sync_interval_minutes: u32,
