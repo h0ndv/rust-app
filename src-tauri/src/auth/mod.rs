@@ -185,7 +185,7 @@ impl SessionManager {
                 Ok(()) => {}
                 Err(error) => {
                     failed += 1;
-                    tracing::warn!(source = source.as_str(), %error, "fuente sin sesión");
+                    tracing::warn!(source = source.as_str(), %error, "source without a session");
                 }
             }
         }
@@ -260,7 +260,7 @@ impl SessionManager {
         self.app
             .get_webview_window(AUTH_WINDOW)
             .or_else(|| self.app.get_webview_window(MAIN_WINDOW))
-            .ok_or_else(|| AppError::Internal("no hay ventana para leer cookies".into()))
+            .ok_or_else(|| AppError::Internal("no window available to read cookies".into()))
     }
 
     pub async fn refresh_health(&self) -> SessionState {
@@ -335,7 +335,7 @@ impl SessionManager {
             loop {
                 ticker.tick().await;
                 let state = manager.refresh_health().await;
-                tracing::debug!(?state, "chequeo de sesión");
+                tracing::debug!(?state, "session check");
             }
         })
     }

@@ -104,7 +104,7 @@ pub fn run() {
             commands::clear_data
         ])
         .run(tauri::generate_context!())
-        .expect("error al iniciar rust-app");
+        .expect("failed to start rust-app");
 }
 
 fn downloads_folder(data_dir: &std::path::Path) -> PathBuf {

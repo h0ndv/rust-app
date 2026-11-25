@@ -128,13 +128,13 @@ async fn download_one(
 
     let size = tokio::fs::metadata(&path)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo leer el archivo: {e}")))?
+        .map_err(|e| AppError::Internal(format!("could not read the file: {e}")))?
         .len();
 
     if size > MAX_BYTES {
         let _ = tokio::fs::remove_file(&path).await;
         return Err(AppError::Internal(format!(
-            "el archivo pasa de {} MB",
+            "the file exceeds {} MB",
             MAX_BYTES / 1024 / 1024
         )));
     }

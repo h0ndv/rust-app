@@ -33,7 +33,7 @@ const MONTHS: [(&str, u32); 12] = [
 ];
 
 fn selector(css: &str) -> Selector {
-    Selector::parse(css).expect("selector CSS válido")
+    Selector::parse(css).expect("valid CSS selector")
 }
 
 fn collapse(text: &str) -> String {
@@ -47,11 +47,11 @@ fn text_of(element: ElementRef<'_>) -> String {
 /// Moodle wraps the AJAX responses in an array with `error` and `data`.
 fn ajax_payload(raw: &str) -> Result<Value, AppError> {
     let parsed: Value = serde_json::from_str(raw)
-        .map_err(|e| AppError::Parse(format!("Moodle no devolvió JSON: {e}")))?;
+        .map_err(|e| AppError::Parse(format!("Moodle did not return JSON: {e}")))?;
 
     let first = parsed
         .get(0)
-        .ok_or_else(|| AppError::Parse("respuesta AJAX vacía".into()))?;
+        .ok_or_else(|| AppError::Parse("empty AJAX response".into()))?;
 
     if first.get("error").and_then(Value::as_bool).unwrap_or(false) {
         let code = first
@@ -61,7 +61,7 @@ fn ajax_payload(raw: &str) -> Result<Value, AppError> {
         return Err(if LOGIN_ERRORS.contains(&code) {
             AppError::Unauthorized
         } else {
-            AppError::Parse(format!("Moodle devolvió error: {code}"))
+            AppError::Parse(format!("Moodle returned an error: {code}"))
         });
     }
 
@@ -93,7 +93,7 @@ pub fn parse_courses_json(raw: &str) -> Result<Vec<MoodleCourse>, AppError> {
     let courses = payload
         .pointer("/0/data/courses")
         .and_then(Value::as_array)
-        .ok_or_else(|| AppError::Parse("Moodle no devolvió cursos".into()))?;
+        .ok_or_else(|| AppError::Parse("Moodle did not return courses".into()))?;
 
     let mut out = Vec::with_capacity(courses.len());
     for course in courses {
@@ -115,7 +115,7 @@ pub fn parse_calendar_json(raw: &str) -> Result<Vec<MoodleEvent>, AppError> {
     let events = payload
         .pointer("/0/data/events")
         .and_then(Value::as_array)
-        .ok_or_else(|| AppError::Parse("Moodle no devolvió eventos".into()))?;
+        .ok_or_else(|| AppError::Parse("Moodle did not return events".into()))?;
 
     let mut out = Vec::with_capacity(events.len());
     for event in events {
@@ -155,7 +155,7 @@ pub fn parse_section_numbers(html: &str) -> Vec<i64> {
 }
 
 fn section_of_href(href: &str) -> Option<i64> {
-    let regex = Regex::new(r"section=(\d+)").expect("regex válida");
+    let regex = Regex::new(r"section=(\d+)").expect("valid regex");
     regex
         .captures(href)
         .and_then(|caps| caps.get(1))
@@ -181,7 +181,7 @@ fn section_name(doc: &Html, section: i64) -> String {
     if section == 0 {
         "General".to_string()
     } else {
-        format!("Sección {section}")
+        format!("Section {section}")
     }
 }
 
@@ -189,14 +189,14 @@ fn section_name(doc: &Html, section: i64) -> String {
 /// carry the name of all of them.
 pub fn parse_course_html(html: &str, section: i64) -> Result<MoodleSection, AppError> {
     if html.trim().is_empty() {
-        return Err(AppError::Parse("HTML vacío".into()));
+        return Err(AppError::Parse("empty HTML".into()));
     }
 
     let doc = Html::parse_document(html);
     let item_selector = selector("li.activity");
     let name_selector = selector("[data-activityname]");
     let anchor_selector = selector("a[href]");
-    let module_regex = Regex::new(r"^module-(\d+)$").expect("regex válida");
+    let module_regex = Regex::new(r"^module-(\d+)$").expect("valid regex");
 
     let mut activities = Vec::new();
     for item in doc.select(&item_selector) {
@@ -290,7 +290,7 @@ pub fn parse_news_forum_url(html: &str) -> Option<String> {
 }
 
 fn discussion_id(href: &str) -> Option<i64> {
-    let regex = Regex::new(r"d=(\d+)").expect("regex válida");
+    let regex = Regex::new(r"d=(\d+)").expect("valid regex");
     regex
         .captures(href)
         .and_then(|caps| caps.get(1))
@@ -392,14 +392,14 @@ pub fn parse_announcements_html(html: &str) -> Result<Vec<MoodleAnnouncement>, A
 
 fn number(text: &str) -> Option<f64> {
     let cleaned = text.replace('\u{a0}', " ");
-    let regex = Regex::new(r"-?\d+(?:[.,]\d+)?").expect("regex válida");
+    let regex = Regex::new(r"-?\d+(?:[.,]\d+)?").expect("valid regex");
     let found = regex.find(&cleaned)?.as_str();
     found.replace(',', ".").parse().ok()
 }
 
 fn range_max(text: &str) -> Option<f64> {
     let cleaned = text.replace('\u{a0}', " ");
-    let regex = Regex::new(r"[–—-]\s*(-?\d+(?:[.,]\d+)?)\s*$").expect("regex válida");
+    let regex = Regex::new(r"[–—-]\s*(-?\d+(?:[.,]\d+)?)\s*$").expect("valid regex");
     let found = regex.captures(&cleaned)?.get(1)?.as_str();
     found.replace(',', ".").parse().ok()
 }
@@ -410,7 +410,7 @@ pub fn parse_grade_total_html(html: &str) -> Result<MoodleGradeTotal, AppError> 
         .select(&selector("table#user-grade"))
         .next()
         .or_else(|| doc.select(&selector("table.user-grade")).next())
-        .ok_or_else(|| AppError::Parse("sin informe de notas".into()))?;
+        .ok_or_else(|| AppError::Parse("missing grade report".into()))?;
 
     let row_selector = selector("tr");
     let name_selector = selector(".column-itemname");
@@ -457,7 +457,7 @@ pub fn parse_grade_total_html(html: &str) -> Result<MoodleGradeTotal, AppError> 
 
     total
         .map(|total| MoodleGradeTotal { total, max_total })
-        .ok_or_else(|| AppError::Parse("sin total del curso".into()))
+        .ok_or_else(|| AppError::Parse("missing course total".into()))
 }
 
 fn parse_activity_dates(doc: &Html) -> (Option<i64>, Option<i64>) {
@@ -505,14 +505,14 @@ fn labelled_date(text: &str, label: &str) -> Option<i64> {
 
 pub fn parse_assignment_html(html: &str) -> Result<MoodleAssignment, AppError> {
     if html.trim().is_empty() {
-        return Err(AppError::Parse("HTML vacío".into()));
+        return Err(AppError::Parse("empty HTML".into()));
     }
 
     let doc = Html::parse_document(html);
     let container = doc
         .select(&selector(".submissionstatustable"))
         .next()
-        .ok_or_else(|| AppError::Parse("sin estado de entrega".into()))?;
+        .ok_or_else(|| AppError::Parse("missing submission status".into()))?;
 
     let row_selector = selector("tr");
     let cell_selector = selector("th, td");
@@ -532,7 +532,7 @@ pub fn parse_assignment_html(html: &str) -> Result<MoodleAssignment, AppError> {
     }
 
     let status_raw =
-        submission.ok_or_else(|| AppError::Parse("sin estado de la entrega".into()))?;
+        submission.ok_or_else(|| AppError::Parse("missing submission state".into()))?;
     let lower = status_raw.to_lowercase();
     let submitted =
         if lower.contains("no se han realizado envíos") || lower.contains("no se ha realizado") {
@@ -541,7 +541,7 @@ pub fn parse_assignment_html(html: &str) -> Result<MoodleAssignment, AppError> {
             true
         } else {
             return Err(AppError::Parse(format!(
-                "estado de entrega desconocido: {status_raw}"
+                "unknown submission status: {status_raw}"
             )));
         };
 
@@ -613,4 +613,17 @@ pub fn parse_description(html: &str) -> String {
         }
     }
     String::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn names_unnamed_sections_in_english() {
+        let doc = Html::parse_document(r#"<a href="?id=1&section=2#tabs-tree-start"></a>"#);
+
+        assert_eq!(section_name(&doc, 2), "Section 2");
+        assert_eq!(section_name(&doc, 0), "General");
+    }
 }

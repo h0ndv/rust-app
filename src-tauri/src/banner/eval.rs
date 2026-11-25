@@ -23,13 +23,13 @@ pub async fn eval_json<T: DeserializeOwned>(
                 let _ = sender.send(result);
             }
         })
-        .map_err(|e| AppError::Internal(format!("no se pudo evaluar en Banner: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not evaluate in Banner: {e}")))?;
 
     let text = tokio::time::timeout(Duration::from_secs(30), receiver)
         .await
-        .map_err(|_| AppError::Network("Banner no respondió en 30 segundos".into()))?
-        .map_err(|_| AppError::Network("la ventana de Banner se cerró".into()))?;
+        .map_err(|_| AppError::Network("Banner did not respond within 30 seconds".into()))?
+        .map_err(|_| AppError::Network("the Banner window was closed".into()))?;
 
     serde_json::from_str(&text)
-        .map_err(|e| AppError::Parse(format!("respuesta de Banner inválida: {e}")))
+        .map_err(|e| AppError::Parse(format!("invalid Banner response: {e}")))
 }

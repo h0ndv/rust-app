@@ -90,7 +90,7 @@ impl Repo {
         sqlx::query_scalar("SELECT count(*) FROM courses")
             .fetch_one(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo contar cursos: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not count courses: {e}")))
     }
 
     pub async fn sync_interval_minutes(&self) -> Result<u64, AppError> {
@@ -98,7 +98,7 @@ impl Repo {
             .bind("sync_interval_minutes")
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer el intervalo: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the interval: {e}")))?;
 
         Ok(value
             .and_then(|value| value.trim().parse::<u64>().ok())
@@ -111,7 +111,7 @@ impl Repo {
             .bind("downloads_dir")
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer la carpeta: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the folder: {e}")))?;
 
         let value = value.unwrap_or_default();
         let value = value.trim();
@@ -140,7 +140,7 @@ impl Repo {
             .bind(&course.last_synced_at)
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo guardar {}: {e}", course.id)))?;
+            .map_err(|e| AppError::Internal(format!("could not save {}: {e}", course.id)))?;
         Ok(())
     }
 
@@ -155,7 +155,7 @@ impl Repo {
             .pool
             .begin()
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo abrir la transacción: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not open the transaction: {e}")))?;
 
         for group in groups {
             sqlx::query(
@@ -167,7 +167,7 @@ impl Repo {
             .bind(&group.name)
             .execute(&mut *tx)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo guardar {}: {e}", group.code)))?;
+            .map_err(|e| AppError::Internal(format!("could not save {}: {e}", group.code)))?;
         }
 
         for course in courses {
@@ -187,21 +187,19 @@ impl Repo {
                 .bind(&course.last_synced_at)
                 .execute(&mut *tx)
                 .await
-                .map_err(|e| {
-                    AppError::Internal(format!("no se pudo guardar {}: {e}", course.id))
-                })?;
+                .map_err(|e| AppError::Internal(format!("could not save {}: {e}", course.id)))?;
         }
 
         tx.commit()
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo confirmar: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not commit: {e}")))
     }
 
     pub async fn list_course_groups(&self) -> Result<Vec<CourseGroupDto>, AppError> {
         let groups: Vec<CourseGroup> = sqlx::query_as("SELECT * FROM course_groups ORDER BY code")
             .fetch_all(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudieron leer los grupos: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the groups: {e}")))?;
 
         let mut out = Vec::with_capacity(groups.len());
         for group in groups {
@@ -238,7 +236,7 @@ impl Repo {
         .bind(group_id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudieron leer las secciones: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not read the sections: {e}")))?;
 
         Ok(rows
             .into_iter()
@@ -262,7 +260,7 @@ impl Repo {
             .bind(group_id)
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer el grupo: {e}")))?
+            .map_err(|e| AppError::Internal(format!("could not read the group: {e}")))?
             .ok_or(AppError::NotFound)?;
 
         let sections = self.sections_for(&group.id).await?;
@@ -276,7 +274,7 @@ impl Repo {
         .bind(&group.id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudieron leer las tareas: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not read the tasks: {e}")))?;
 
         let resources: Vec<FileItem> = sqlx::query_as(
             "SELECT f.* FROM files f
@@ -287,7 +285,7 @@ impl Repo {
         .bind(&group.id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudieron leer los recursos: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not read the resources: {e}")))?;
 
         let grades: Vec<GradeItem> = sqlx::query_as(
             "SELECT g.* FROM grade_items g
@@ -298,7 +296,7 @@ impl Repo {
         .bind(&group.id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudieron leer las notas: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not read the grades: {e}")))?;
 
         let schedule: Vec<ScheduleEvent> = sqlx::query_as(
             "SELECT s.* FROM schedule_events s
@@ -309,7 +307,7 @@ impl Repo {
         .bind(&group.id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo leer el horario: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not read the schedule: {e}")))?;
 
         Ok(CourseDetailDto {
             group: CourseGroupDto {
@@ -341,9 +339,7 @@ impl Repo {
         .bind(section.position)
         .execute(&self.pool)
         .await
-        .map_err(|e| {
-            AppError::Internal(format!("no se pudo guardar la sección {}: {e}", section.id))
-        })
+        .map_err(|e| AppError::Internal(format!("could not save section {}: {e}", section.id)))
         .map(|_| ())
     }
 
@@ -398,12 +394,7 @@ impl Repo {
         .bind(&activity.last_seen_at)
         .execute(&self.pool)
         .await
-        .map_err(|e| {
-            AppError::Internal(format!(
-                "no se pudo guardar la actividad {}: {e}",
-                activity.id
-            ))
-        })
+        .map_err(|e| AppError::Internal(format!("could not save activity {}: {e}", activity.id)))
         .map(|_| ())
     }
 
@@ -441,7 +432,7 @@ impl Repo {
         .bind(&file.last_seen_at)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar el archivo {}: {e}", file.id)))
+        .map_err(|e| AppError::Internal(format!("could not save file {}: {e}", file.id)))
         .map(|_| ())
     }
 
@@ -476,7 +467,7 @@ impl Repo {
         .bind(&item.raw_json)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar la nota {}: {e}", item.id)))
+        .map_err(|e| AppError::Internal(format!("could not save grade {}: {e}", item.id)))
         .map(|_| ())
     }
 
@@ -497,7 +488,7 @@ impl Repo {
         .bind(&total.updated_at)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar el total: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not save the total: {e}")))
         .map(|_| ())
     }
 
@@ -532,7 +523,7 @@ impl Repo {
         .bind(&event.raw_json)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar el bloque {}: {e}", event.id)))
+        .map_err(|e| AppError::Internal(format!("could not save block {}: {e}", event.id)))
         .map(|_| ())
     }
 
@@ -560,7 +551,7 @@ impl Repo {
         .bind(&announcement.acknowledged_at)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar el anuncio {}: {e}", announcement.id)))
+        .map_err(|e| AppError::Internal(format!("could not save announcement {}: {e}", announcement.id)))
         .map(|_| ())
     }
 
@@ -579,7 +570,7 @@ impl Repo {
         .bind(&status.last_error)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo guardar el estado: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not save the state: {e}")))
         .map(|_| ())
     }
 
@@ -596,7 +587,7 @@ impl Repo {
         .bind(&run.errors_json)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo abrir la corrida: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not open the run: {e}")))
         .map(|_| ())
     }
 
@@ -619,7 +610,7 @@ impl Repo {
         .bind(id)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo cerrar la corrida: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not close the run: {e}")))
         .map(|_| ())
     }
 
@@ -633,7 +624,7 @@ impl Repo {
             .bind(id)
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer la actividad: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not read the activity: {e}")))
     }
 
     pub async fn set_course_synced(&self, course_id: &str, at: &str) -> Result<(), AppError> {
@@ -642,7 +633,7 @@ impl Repo {
             .bind(course_id)
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo marcar el curso: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not mark the course: {e}")))
             .map(|_| ())
     }
 
@@ -654,7 +645,7 @@ impl Repo {
             .bind(id)
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer el archivo: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not read the file: {e}")))
     }
 
     pub async fn mark_downloaded(&self, id: &str, path: &str) -> Result<(), AppError> {
@@ -663,7 +654,7 @@ impl Repo {
             .bind(id)
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo guardar la ruta: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not save the path: {e}")))
             .map(|_| ())
     }
 }
@@ -674,7 +665,7 @@ impl Repo {
             .bind(id)
             .fetch_one(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer el archivo: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the file: {e}")))?;
         Ok(count > 0)
     }
 
@@ -683,7 +674,7 @@ impl Repo {
             .bind(id)
             .fetch_one(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo leer el anuncio: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the announcement: {e}")))?;
         Ok(count > 0)
     }
 }
@@ -697,7 +688,7 @@ impl Repo {
         .bind(crn)
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo buscar el CRN: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not look up the CRN: {e}")))
     }
 }
 
@@ -712,7 +703,7 @@ impl Repo {
         .execute(&self.pool)
         .await
         .map(|result| result.rows_affected())
-        .map_err(|e| AppError::Internal(format!("no se pudieron cerrar corridas: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not close runs: {e}")))
     }
 }
 
@@ -731,7 +722,7 @@ impl Repo {
             .bind(id)
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo limpiar el índice: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not clear the index: {e}")))?;
 
         sqlx::query("INSERT INTO search_index (kind, entity_id, title, body) VALUES (?, ?, ?, ?)")
             .bind(kind)
@@ -740,7 +731,7 @@ impl Repo {
             .bind(body)
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo indexar: {e}")))
+            .map_err(|e| AppError::Internal(format!("could not index: {e}")))
             .map(|_| ())
     }
 }
@@ -752,12 +743,12 @@ impl Repo {
         sqlx::query("PRAGMA optimize")
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo optimizar la base: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not optimize the database: {e}")))?;
 
         sqlx::query("PRAGMA wal_checkpoint(TRUNCATE)")
             .execute(&self.pool)
             .await
-            .map_err(|e| AppError::Internal(format!("no se pudo recortar el WAL: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not truncate the WAL: {e}")))?;
 
         Ok(())
     }

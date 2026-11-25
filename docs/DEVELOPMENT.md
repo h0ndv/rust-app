@@ -74,7 +74,8 @@ Current totals: 77 Rust tests and 46 frontend tests.
   per task.
 - Comments only when they explain a constraint that the signature cannot.
 - Errors carry a `kind` (`network`, `unauthorized`, `parse`, `not_found`,
-  `rate_limited`, `internal`) and a message in Spanish for the UI.
+  `rate_limited`, `internal`) and a technical message in English;
+  the interface localizes by `kind`.
 
 ## 8. Known traps
 

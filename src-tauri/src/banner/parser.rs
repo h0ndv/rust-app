@@ -17,7 +17,8 @@ fn parse_json(raw: &str) -> Result<Value, AppError> {
     if looks_like_sso(raw) {
         return Err(AppError::Unauthorized);
     }
-    serde_json::from_str(raw).map_err(|e| AppError::Parse(format!("Banner no devolvió JSON: {e}")))
+    serde_json::from_str(raw)
+        .map_err(|e| AppError::Parse(format!("Banner did not return JSON: {e}")))
 }
 
 fn text(row: &Value, key: &str) -> String {
@@ -38,15 +39,13 @@ pub fn parse_courses_response(raw: &str) -> Result<Vec<BannerGrade>, AppError> {
     let payload = parse_json(raw)?;
 
     if payload.get("success").and_then(Value::as_bool) == Some(false) {
-        return Err(AppError::Parse(
-            "Banner rechazó la consulta de notas".into(),
-        ));
+        return Err(AppError::Parse("Banner rejected the grades query".into()));
     }
 
     let rows = payload
         .get("data")
         .and_then(Value::as_array)
-        .ok_or_else(|| AppError::Parse("Banner no devolvió notas".into()))?;
+        .ok_or_else(|| AppError::Parse("Banner did not return grades".into()))?;
 
     let mut out = Vec::with_capacity(rows.len());
     for row in rows {
@@ -72,7 +71,7 @@ pub fn parse_options_response(raw: &str) -> Result<Vec<BannerOption>, AppError> 
     let payload = parse_json(raw)?;
     let rows = payload
         .as_array()
-        .ok_or_else(|| AppError::Parse("Banner no devolvió una lista".into()))?;
+        .ok_or_else(|| AppError::Parse("Banner did not return a list".into()))?;
 
     let mut out = Vec::with_capacity(rows.len());
     for row in rows {

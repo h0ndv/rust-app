@@ -13,7 +13,7 @@ const ATTEMPTS: u8 = 2;
 /// channel, so the read retries once before giving up.
 pub async fn header_for(window: &WebviewWindow, url: &str) -> Result<String, AppError> {
     let parsed =
-        Url::parse(url).map_err(|e| AppError::Internal(format!("URL de cookies inválida: {e}")))?;
+        Url::parse(url).map_err(|e| AppError::Internal(format!("invalid cookie URL: {e}")))?;
 
     let mut attempt = 1;
     loop {
@@ -34,7 +34,7 @@ pub async fn header_for(window: &WebviewWindow, url: &str) -> Result<String, App
             }
             Ok(Err(error)) => {
                 return Err(AppError::Internal(format!(
-                    "no se pudieron leer las cookies: {error}"
+                    "could not read cookies: {error}"
                 )));
             }
             Err(error) if attempt < ATTEMPTS => {
@@ -42,7 +42,7 @@ pub async fn header_for(window: &WebviewWindow, url: &str) -> Result<String, App
             }
             Err(error) => {
                 return Err(AppError::Internal(format!(
-                    "tarea de cookies cancelada: {error}"
+                    "cookie task cancelled: {error}"
                 )));
             }
         }

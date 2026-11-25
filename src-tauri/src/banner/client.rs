@@ -120,14 +120,14 @@ impl BannerClient {
         }
 
         let url = Url::parse(BANNER_BASE)
-            .map_err(|e| AppError::Internal(format!("URL de Banner inválida: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("invalid Banner URL: {e}")))?;
 
         let window = WebviewWindowBuilder::new(&app, WINDOW, WebviewUrl::External(url))
             .title("Banner")
             .inner_size(1024.0, 768.0)
             .visible(false)
             .build()
-            .map_err(|e| AppError::Internal(format!("no se pudo abrir Banner: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not open Banner: {e}")))?;
 
         let deadline = tokio::time::Instant::now() + Duration::from_secs(120);
         loop {
@@ -139,7 +139,7 @@ impl BannerClient {
             if tokio::time::Instant::now() >= deadline {
                 let _ = window.destroy();
                 return Err(AppError::Network(
-                    "Banner no terminó la autenticación en 2 minutos".into(),
+                    "Banner did not finish authentication within 2 minutes".into(),
                 ));
             }
             tokio::time::sleep(Duration::from_millis(500)).await;

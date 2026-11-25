@@ -9,7 +9,7 @@ pub const BANNER_BASE: &str =
     "https://selferviceprd.santotomas.cl/StudentSelfService/studentGrades";
 
 pub fn course_code(fullname: &str) -> Option<(String, String, String)> {
-    let regex = Regex::new(r"([A-Z]{3})-(\d{5})-([A-Z0-9]{3})").expect("regex válida");
+    let regex = Regex::new(r"([A-Z]{3})-(\d{5})-([A-Z0-9]{3})").expect("valid regex");
     let caps = regex.captures(fullname)?;
     Some((
         caps.get(1)?.as_str().to_string(),
@@ -167,11 +167,11 @@ pub fn course_rows(
 
 fn clean_name(fullname: &str, code: &str) -> String {
     // The name carries the full code in parentheses: "(IGR-00167-00G)".
-    let trailing = Regex::new(r"\s*\([A-Z]{3}-\d{5}-[A-Z0-9]{3}\)\s*$").expect("regex válida");
+    let trailing = Regex::new(r"\s*\([A-Z]{3}-\d{5}-[A-Z0-9]{3}\)\s*$").expect("valid regex");
     let without_code = trailing.replace(fullname, "").to_string();
     let without_code = without_code.replace(&format!("({code})"), "");
     let prefix =
-        Regex::new(r"(?i)^\s*semestre\s+pregrado\s+\d{4}\s*-\s*\d\s+").expect("regex válida");
+        Regex::new(r"(?i)^\s*semestre\s+pregrado\s+\d{4}\s*-\s*\d\s+").expect("valid regex");
     let name = prefix.replace(&without_code, "");
     name.trim().trim_end_matches('-').trim().to_string()
 }

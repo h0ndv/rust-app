@@ -30,15 +30,13 @@ pub async fn open_auth_window(app: &AppHandle, source: Source) -> Result<Webview
                 .title("Conectar con Microsoft")
                 .inner_size(1024.0, 768.0)
                 .build()
-                .map_err(|e| {
-                    AppError::Internal(format!("no se pudo abrir la ventana de login: {e}"))
-                })?
+                .map_err(|e| AppError::Internal(format!("could not open the login window: {e}")))?
         }
     };
 
     window
         .navigate(parse_url(source.start_url())?)
-        .map_err(|e| AppError::Internal(format!("no se pudo navegar: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not navigate: {e}")))?;
     let _ = window.show();
     let _ = window.set_focus();
 
@@ -53,14 +51,14 @@ async fn wait_until_ready(window: &WebviewWindow, source: Source) -> Result<(), 
     loop {
         if tokio::time::Instant::now() >= deadline {
             return Err(AppError::Internal(format!(
-                "{}: el login no terminó a tiempo",
+                "{}: login did not finish in time",
                 source.label()
             )));
         }
 
         let current = window
             .url()
-            .map_err(|e| AppError::Internal(format!("no se pudo leer la URL: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("could not read the URL: {e}")))?;
 
         if source.is_ready(&current) {
             return Ok(());
@@ -79,5 +77,5 @@ async fn wait_until_ready(window: &WebviewWindow, source: Source) -> Result<(), 
 }
 
 fn parse_url(value: &str) -> Result<Url, AppError> {
-    Url::parse(value).map_err(|e| AppError::Internal(format!("URL inválida {value}: {e}")))
+    Url::parse(value).map_err(|e| AppError::Internal(format!("invalid URL {value}: {e}")))
 }

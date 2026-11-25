@@ -7,7 +7,7 @@ use crate::error::AppError;
 
 fn payload(raw: &str) -> Result<Value, AppError> {
     let parsed: Value = serde_json::from_str(raw)
-        .map_err(|e| AppError::Parse(format!("Ellucian no devolvió JSON: {e}")))?;
+        .map_err(|e| AppError::Parse(format!("Ellucian did not return JSON: {e}")))?;
 
     if let Some(errors) = parsed.get("errors").and_then(Value::as_array)
         && let Some(first) = errors.first()
@@ -15,7 +15,7 @@ fn payload(raw: &str) -> Result<Value, AppError> {
         let code = first.get("code").and_then(Value::as_str).unwrap_or("error");
         let message = first.get("message").and_then(Value::as_str).unwrap_or("");
         return Err(AppError::Parse(format!(
-            "Ellucian devolvió {code}: {message}"
+            "Ellucian returned {code}: {message}"
         )));
     }
 
@@ -27,7 +27,7 @@ fn edges<'a>(payload: &'a Value, field: &str) -> Result<&'a [Value], AppError> {
         .pointer(&format!("/data/{field}/edges"))
         .and_then(Value::as_array)
         .map(Vec::as_slice)
-        .ok_or_else(|| AppError::Parse(format!("sin {field}")))
+        .ok_or_else(|| AppError::Parse(format!("missing {field}")))
 }
 
 fn clock(value: &str) -> Option<String> {
@@ -82,7 +82,7 @@ pub fn parse_schedule_response(raw: &str) -> Result<Vec<InstructionalEvent>, App
     for edge in edges {
         let node = edge
             .get("node")
-            .ok_or_else(|| AppError::Parse("evento sin node".into()))?;
+            .ok_or_else(|| AppError::Parse("event without a node".into()))?;
 
         let id = text_at(node, "/id").unwrap_or_default().to_string();
         let start_on = text_at(node, "/recurrence/timePeriod/startOn").unwrap_or_default();

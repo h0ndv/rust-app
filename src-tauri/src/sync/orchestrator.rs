@@ -104,9 +104,7 @@ impl SyncOrchestrator {
 
     pub async fn run(&self, trigger: SyncTrigger) -> Result<SyncRun, AppError> {
         if !self.try_begin() {
-            return Err(AppError::Internal(
-                "ya hay una sincronización en curso".into(),
-            ));
+            return Err(AppError::Internal("a sync is already running".into()));
         }
         let result = self.execute(trigger).await;
         self.end();
@@ -234,13 +232,13 @@ impl SyncOrchestrator {
         for source in Source::ALL {
             let healthy = self.check_health(source).await;
             if !healthy {
-                errors.push(format!("{}: sin sesión", source.as_str()));
+                errors.push(format!("{}: no session", source.as_str()));
             }
             repo.upsert_source_status(&SourceStatus {
                 source: source.as_str().to_string(),
                 state: if healthy { "ok" } else { "failed" }.to_string(),
                 last_checked_at: Some(Utc::now().to_rfc3339()),
-                last_error: (!healthy).then(|| "sin sesión".to_string()),
+                last_error: (!healthy).then(|| "no session".to_string()),
             })
             .await?;
         }
@@ -347,7 +345,7 @@ impl SyncOrchestrator {
         let groups = course_groups(&to_upsert);
 
         if let Err(error) = repo.upsert_catalog(&groups, &to_upsert).await {
-            errors.push(format!("catálogo: {error}"));
+            errors.push(format!("catalog: {error}"));
         }
         step += 1;
         self.publish(progress(step), None, errors.clone());

@@ -33,7 +33,7 @@ pub async fn connect(path: &Path) -> Result<SqlitePool, AppError> {
             && !parent.as_os_str().is_empty()
         {
             std::fs::create_dir_all(parent).map_err(|e| {
-                AppError::Internal(format!("no se pudo crear {}: {e}", parent.display()))
+                AppError::Internal(format!("could not create {}: {e}", parent.display()))
             })?;
         }
         options = options
@@ -48,12 +48,12 @@ pub async fn connect(path: &Path) -> Result<SqlitePool, AppError> {
         .acquire_timeout(Duration::from_secs(30))
         .connect_with(options)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo abrir la base: {e}")))
+        .map_err(|e| AppError::Internal(format!("could not open the database: {e}")))
 }
 
 pub async fn migrate(pool: &SqlitePool) -> Result<(), AppError> {
     sqlx::migrate!("./migrations")
         .run(pool)
         .await
-        .map_err(|e| AppError::Internal(format!("fallo la migración: {e}")))
+        .map_err(|e| AppError::Internal(format!("migration failed: {e}")))
 }

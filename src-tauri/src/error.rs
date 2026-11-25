@@ -3,15 +3,15 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
-    #[error("Fallo de red: {0}")]
+    #[error("Network failure: {0}")]
     Network(String),
-    #[error("Sesión vencida o sin permiso")]
+    #[error("Session expired or not authorized")]
     Unauthorized,
-    #[error("Respuesta inesperada: {0}")]
+    #[error("Unexpected response: {0}")]
     Parse(String),
-    #[error("No encontrado")]
+    #[error("Not found")]
     NotFound,
-    #[error("Se agotó el límite de peticiones de esta corrida")]
+    #[error("The request limit for this run was reached")]
     RateLimited,
     #[error("{0}")]
     Internal(String),
@@ -45,9 +45,9 @@ mod tests {
 
     #[test]
     fn serialize_includes_kind_and_message() {
-        let json = serde_json::to_value(AppError::Parse("vacío".into())).unwrap();
+        let json = serde_json::to_value(AppError::Parse("empty".into())).unwrap();
         assert_eq!(json["kind"], "parse");
-        assert_eq!(json["message"], "Respuesta inesperada: vacío");
+        assert_eq!(json["message"], "Unexpected response: empty");
     }
 
     #[test]

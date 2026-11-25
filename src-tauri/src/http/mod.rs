@@ -23,7 +23,7 @@ pub async fn read_text(response: Response) -> Result<String, AppError> {
     match tokio::time::timeout(BODY_TIMEOUT, response.text()).await {
         Ok(Ok(text)) => Ok(text),
         Ok(Err(error)) => Err(AppError::Network(error.to_string())),
-        Err(_) => Err(AppError::Network("la respuesta tardó demasiado".into())),
+        Err(_) => Err(AppError::Network("the response took too long".into())),
     }
 }
 
@@ -31,7 +31,7 @@ pub async fn read_bytes(response: Response) -> Result<Vec<u8>, AppError> {
     match tokio::time::timeout(BINARY_TIMEOUT, response.bytes()).await {
         Ok(Ok(bytes)) => Ok(bytes.to_vec()),
         Ok(Err(error)) => Err(AppError::Network(error.to_string())),
-        Err(_) => Err(AppError::Network("la descarga tardó demasiado".into())),
+        Err(_) => Err(AppError::Network("the download took too long".into())),
     }
 }
 
@@ -49,7 +49,7 @@ impl HttpClient {
             .redirect(reqwest::redirect::Policy::limited(MAX_REDIRECTS))
             .user_agent(user_agent)
             .build()
-            .expect("no se pudo crear el cliente HTTP");
+            .expect("could not create the HTTP client");
 
         Self {
             client,
@@ -73,7 +73,7 @@ impl HttpClient {
         body: &T,
     ) -> Result<Response, AppError> {
         let payload = serde_json::to_vec(body)
-            .map_err(|e| AppError::Parse(format!("cuerpo JSON inválido: {e}")))?;
+            .map_err(|e| AppError::Parse(format!("invalid JSON body: {e}")))?;
 
         let request = self
             .client
@@ -91,7 +91,7 @@ impl HttpClient {
             .in_flight
             .acquire()
             .await
-            .map_err(|e| AppError::Internal(format!("semáforo cerrado: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("semaphore closed: {e}")))?;
 
         let response = request
             .send()

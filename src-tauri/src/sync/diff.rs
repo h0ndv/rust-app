@@ -10,7 +10,7 @@ pub async fn is_baseline(pool: &SqlitePool, course_id: &str) -> Result<bool, App
         .bind(course_id)
         .fetch_one(pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo contar actividades: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not count activities: {e}")))?;
     Ok(count == 0)
 }
 
@@ -25,7 +25,7 @@ pub async fn mark_new(pool: &SqlitePool, kind: &str, id: &str) -> Result<(), App
     .bind(Utc::now().to_rfc3339())
     .execute(pool)
     .await
-    .map_err(|e| AppError::Internal(format!("no se pudo registrar la novedad: {e}")))
+    .map_err(|e| AppError::Internal(format!("could not record the novelty: {e}")))
     .map(|_| ())
 }
 
@@ -34,7 +34,7 @@ pub async fn acknowledge(pool: &SqlitePool, kind: &str, id: &str) -> Result<(), 
         "activity" => "activities",
         "file" => "files",
         "announcement" => "announcements",
-        other => return Err(AppError::Internal(format!("tipo desconocido: {other}"))),
+        other => return Err(AppError::Internal(format!("unknown type: {other}"))),
     };
 
     let now = Utc::now().to_rfc3339();
@@ -45,14 +45,14 @@ pub async fn acknowledge(pool: &SqlitePool, kind: &str, id: &str) -> Result<(), 
     .bind(id)
     .execute(pool)
     .await
-    .map_err(|e| AppError::Internal(format!("no se pudo reconocer el elemento: {e}")))?;
+    .map_err(|e| AppError::Internal(format!("could not recognize the item: {e}")))?;
 
     sqlx::query("UPDATE events SET acknowledged_at = ? WHERE entity_id = ?")
         .bind(&now)
         .bind(id)
         .execute(pool)
         .await
-        .map_err(|e| AppError::Internal(format!("no se pudo reconocer la novedad: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("could not recognize the novelty: {e}")))?;
 
     Ok(())
 }
@@ -78,7 +78,7 @@ pub async fn archive_stale(pool: &SqlitePool, now: DateTime<Utc>) -> Result<u64,
     .bind(&synced_after)
     .execute(pool)
     .await
-    .map_err(|e| AppError::Internal(format!("no se pudieron archivar tareas: {e}")))?
+    .map_err(|e| AppError::Internal(format!("could not archive tasks: {e}")))?
     .rows_affected();
 
     let files = sqlx::query(
@@ -95,7 +95,7 @@ pub async fn archive_stale(pool: &SqlitePool, now: DateTime<Utc>) -> Result<u64,
     .bind(&synced_after)
     .execute(pool)
     .await
-    .map_err(|e| AppError::Internal(format!("no se pudieron archivar recursos: {e}")))?
+    .map_err(|e| AppError::Internal(format!("could not archive resources: {e}")))?
     .rows_affected();
 
     Ok(activities + files)

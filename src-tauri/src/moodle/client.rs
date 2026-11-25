@@ -76,7 +76,7 @@ impl MoodleClient {
         }
 
         let html = self.get_path("/my/courses.php").await?;
-        let regex = regex::Regex::new(r#""sesskey":"([^"]+)""#).expect("regex válida");
+        let regex = regex::Regex::new(r#""sesskey":"([^"]+)""#).expect("valid regex");
         let key = regex
             .captures(&html)
             .and_then(|caps| caps.get(1))
@@ -225,11 +225,11 @@ impl MoodleClient {
         if let Some(parent) = dest.parent().filter(|p| !p.as_os_str().is_empty()) {
             tokio::fs::create_dir_all(parent)
                 .await
-                .map_err(|e| AppError::Internal(format!("no se pudo crear la carpeta: {e}")))?;
+                .map_err(|e| AppError::Internal(format!("could not create the folder: {e}")))?;
         }
-        tokio::fs::write(dest, &bytes).await.map_err(|e| {
-            AppError::Internal(format!("no se pudo guardar {}: {e}", dest.display()))
-        })?;
+        tokio::fs::write(dest, &bytes)
+            .await
+            .map_err(|e| AppError::Internal(format!("could not save {}: {e}", dest.display())))?;
 
         Ok(dest.to_path_buf())
     }
