@@ -6,6 +6,7 @@ export const es: Catalog = {
         noDate: 'Sin fecha',
         notPublished: 'Sin publicar',
         open: 'Abrir',
+        openCourse: 'Abrir curso',
         save: 'Guardar',
         retry: 'Reintentar',
         continue: 'Continuar',

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,7 +38,23 @@ export function News({ items }: { items: NewsItemDto[] }) {
                             {t(ITEM_KIND_KEY[itemKind(item.kind) ?? 'other'])}
                         </span>
                         <span className="text-sm font-medium">
-                            {item.title}
+                            {item.group_id ? (
+                                <Link
+                                    to="/ramos/$groupId"
+                                    params={{ groupId: item.group_id }}
+                                    search={
+                                        item.kind === 'announcement'
+                                            ? {}
+                                            : { focus: item.id }
+                                    }
+                                    aria-label={t('common.openCourse')}
+                                    className="underline-offset-4 hover:underline"
+                                >
+                                    {item.title}
+                                </Link>
+                            ) : (
+                                item.title
+                            )}
                         </span>
                     </div>
                     {item.course ? (

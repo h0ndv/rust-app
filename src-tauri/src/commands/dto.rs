@@ -94,6 +94,7 @@ pub struct NewsItemDto {
     pub body: String,
     pub published_at: Option<i64>,
     pub kind: String,
+    pub group_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -142,6 +143,7 @@ pub struct SearchHitDto {
     pub id: String,
     pub title: String,
     pub body: String,
+    pub group_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]

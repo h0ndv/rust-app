@@ -75,6 +75,7 @@ export interface NewsItemDto {
     body: string;
     published_at: number | null;
     kind: NewsKind;
+    group_id: string | null;
 }
 
 export interface DashboardDto {
@@ -132,6 +133,7 @@ export interface SearchHitDto {
     id: string;
     title: string;
     body: string;
+    group_id: string | null;
 }
 
 export interface SearchResultsDto {

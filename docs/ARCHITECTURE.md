@@ -260,6 +260,7 @@ Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finish
 | Baseline per course                                                     | Global first run                     | A new course added mid-semester should not flood Novedades          | A newly added course never marks its first items as new |
 | Frontend-owned i18n catalogs                                            | Rust-localized messages              | UI copy and `Intl` formatting change with the interface             | A catalog per language                                  |
 | CSP plus a three-host allowlist                                         | Trust every URL the adapters produce | The browser window shares the authenticated WebView2 profile        | A source link outside those hosts is blocked by design  |
+| Deep links carry the course group and an optional focus                 | Resolve ids inside the route         | Search and Novedades already join the source tables                 | A hit without a course stays unlinked                   |
 
 ## 12. Extension points
 

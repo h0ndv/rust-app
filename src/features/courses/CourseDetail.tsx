@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { api, type CourseDetailDto } from '@/lib/api';
@@ -9,9 +10,23 @@ import { TASK_STATUS_KEY, taskStatus } from '@/lib/task-status';
 
 import { EmptyNote, ErrorNote, Loading, Screen } from '../common/Screen';
 
-export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
+export function CourseDetail({
+    detail,
+    focus,
+}: {
+    detail: CourseDetailDto;
+    focus?: string;
+}) {
     const { t } = useTranslation();
     const { formatDate, formatGrade } = useFormatters();
+
+    useEffect(() => {
+        if (focus) {
+            document
+                .getElementById(`focus-${focus}`)
+                ?.scrollIntoView({ block: 'center' });
+        }
+    }, [focus]);
 
     return (
         <div className="flex flex-col gap-8">
@@ -43,7 +58,13 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                         {detail.tasks.map((task) => (
                             <li
                                 key={task.id}
-                                className="flex flex-wrap items-center gap-3 p-3 text-sm"
+                                id={`focus-${task.id}`}
+                                aria-current={
+                                    focus === task.id ? 'true' : undefined
+                                }
+                                className={`flex flex-wrap items-center gap-3 p-3 text-sm ${
+                                    focus === task.id ? 'bg-primary/5' : ''
+                                }`}
                             >
                                 <span className="min-w-0 flex-1 truncate">
                                     {task.name}
@@ -80,7 +101,13 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
                         {detail.resources.map((resource) => (
                             <li
                                 key={resource.id}
-                                className="flex flex-wrap items-center gap-3 p-3 text-sm"
+                                id={`focus-${resource.id}`}
+                                aria-current={
+                                    focus === resource.id ? 'true' : undefined
+                                }
+                                className={`flex flex-wrap items-center gap-3 p-3 text-sm ${
+                                    focus === resource.id ? 'bg-primary/5' : ''
+                                }`}
                             >
                                 <span className="min-w-0 flex-1 truncate">
                                     {resource.name}
@@ -151,6 +178,7 @@ export function CourseDetail({ detail }: { detail: CourseDetailDto }) {
 export function CourseDetailScreen() {
     const { t } = useTranslation();
     const { groupId } = useParams({ strict: false }) as { groupId: string };
+    const { focus } = useSearch({ from: '/ramos/$groupId' });
     const { data, error, isPending } = useQuery({
         queryKey: ['course', groupId],
         queryFn: () => api.getCourse(groupId),
@@ -174,7 +202,7 @@ export function CourseDetailScreen() {
             ) : error ? (
                 <ErrorNote error={error} />
             ) : data ? (
-                <CourseDetail detail={data} />
+                <CourseDetail detail={data} focus={focus} />
             ) : null}
         </Screen>
     );

@@ -136,6 +136,7 @@ struct NewsRow {
     kind: String,
     id: String,
     course_title: Option<String>,
+    group_id: Option<String>,
     title: String,
     body: String,
     published_at: Option<i64>,
@@ -431,19 +432,23 @@ pub async fn get_schedule(state: State<'_, AppState>) -> Cmd<Vec<ScheduleEventDt
 
 #[tauri::command]
 pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
+    news_items(&state.pool).await
+}
+
+pub async fn news_items(pool: &sqlx::SqlitePool) -> Cmd<Vec<NewsItemDto>> {
     let rows: Vec<NewsRow> = sqlx::query_as(
-        "SELECT 'announcement' AS kind, a.id, c.fullname AS course_title, a.title, a.body,
-                a.published_at
+        "SELECT 'announcement' AS kind, a.id, c.fullname AS course_title, c.group_id,
+                a.title, a.body, a.published_at
          FROM announcements a
          LEFT JOIN courses c ON c.id = a.course_id
          WHERE a.acknowledged_at IS NULL
          UNION ALL
-         SELECT 'file', f.id, c.fullname, f.name, '', NULL
+         SELECT 'file', f.id, c.fullname, c.group_id, f.name, '', NULL
          FROM files f
          LEFT JOIN courses c ON c.id = f.course_id
          WHERE f.acknowledged_at IS NULL AND f.archived_at IS NULL
          UNION ALL
-         SELECT 'activity', a.id, c.fullname, a.name, a.description, a.due_at
+         SELECT 'activity', a.id, c.fullname, c.group_id, a.name, a.description, a.due_at
          FROM activities a
          LEFT JOIN courses c ON c.id = a.course_id
          WHERE a.acknowledged_at IS NULL AND a.archived_at IS NULL
@@ -451,7 +456,7 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
          ORDER BY published_at DESC
          LIMIT 100",
     )
-    .fetch_all(&state.pool)
+    .fetch_all(pool)
     .await
     .map_err(fail)?;
 
@@ -460,6 +465,7 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
         .map(|row| NewsItemDto {
             id: row.id,
             course: row.course_title,
+            group_id: row.group_id,
             title: row.title,
             body: row.body,
             published_at: row.published_at,
@@ -471,6 +477,48 @@ pub async fn list_news(state: State<'_, AppState>) -> Cmd<Vec<NewsItemDto>> {
 #[tauri::command]
 pub async fn acknowledge(state: State<'_, AppState>, kind: NewsKind, id: String) -> Cmd<()> {
     crate::sync::acknowledge(&state.pool, kind.as_str(), &id).await
+}
+
+#[derive(FromRow)]
+struct SearchRow {
+    kind: String,
+    entity_id: String,
+    title: String,
+    body: String,
+    group_id: Option<String>,
+}
+
+pub async fn search_hits(pool: &sqlx::SqlitePool, cleaned: &str) -> Cmd<Vec<SearchHitDto>> {
+    let rows: Vec<SearchRow> = sqlx::query_as(
+        "SELECT search_index.kind, search_index.entity_id,
+                search_index.title, search_index.body, c.group_id AS group_id
+         FROM search_index
+         LEFT JOIN activities a
+           ON search_index.kind = 'activity' AND a.id = search_index.entity_id
+         LEFT JOIN files f
+           ON search_index.kind = 'file' AND f.id = search_index.entity_id
+         LEFT JOIN announcements an
+           ON search_index.kind = 'announcement' AND an.id = search_index.entity_id
+         LEFT JOIN courses c
+           ON c.id = COALESCE(a.course_id, f.course_id, an.course_id)
+         WHERE search_index MATCH ?
+         LIMIT 50",
+    )
+    .bind(format!("\"{cleaned}\""))
+    .fetch_all(pool)
+    .await
+    .map_err(fail)?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| SearchHitDto {
+            kind: row.kind,
+            id: row.entity_id,
+            title: row.title,
+            body: row.body,
+            group_id: row.group_id,
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -489,24 +537,7 @@ pub async fn search(state: State<'_, AppState>, query: String) -> Cmd<SearchResu
         });
     }
 
-    let rows: Vec<(String, String, String, String)> = sqlx::query_as(
-        "SELECT kind, entity_id, title, body FROM search_index
-         WHERE search_index MATCH ? LIMIT 50",
-    )
-    .bind(format!("\"{cleaned}\""))
-    .fetch_all(&state.pool)
-    .await
-    .map_err(fail)?;
-
-    let items: Vec<SearchHitDto> = rows
-        .into_iter()
-        .map(|(kind, id, title, body)| SearchHitDto {
-            kind,
-            id,
-            title,
-            body,
-        })
-        .collect();
+    let items = search_hits(&state.pool, cleaned).await?;
 
     Ok(SearchResultsDto {
         query,

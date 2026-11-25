@@ -40,9 +40,14 @@ const coursesRoute = createRoute({
     component: CoursesScreen,
 });
 
+export type CourseSearch = { focus?: string };
+
 const courseDetailRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/ramos/$groupId',
+    validateSearch: (search: Record<string, unknown>): CourseSearch => ({
+        focus: typeof search.focus === 'string' ? search.focus : undefined,
+    }),
     component: CourseDetailScreen,
 });
 

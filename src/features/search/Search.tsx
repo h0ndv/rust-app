@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -30,7 +31,23 @@ export function SearchResults({ results }: { results: SearchResultsDto }) {
                             {t(ITEM_KIND_KEY[itemKind(item.kind) ?? 'other'])}
                         </span>
                         <span className="text-sm font-medium">
-                            {item.title}
+                            {item.group_id ? (
+                                <Link
+                                    to="/ramos/$groupId"
+                                    params={{ groupId: item.group_id }}
+                                    search={
+                                        item.kind === 'announcement'
+                                            ? {}
+                                            : { focus: item.id }
+                                    }
+                                    className="underline-offset-4 hover:underline"
+                                    title={t('common.openCourse')}
+                                >
+                                    {item.title}
+                                </Link>
+                            ) : (
+                                item.title
+                            )}
                         </span>
                     </div>
                     {item.body ? (

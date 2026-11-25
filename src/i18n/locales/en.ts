@@ -4,6 +4,7 @@ export const en = {
         noDate: 'No date',
         notPublished: 'Not published',
         open: 'Open',
+        openCourse: 'Open course',
         save: 'Save',
         retry: 'Retry',
         continue: 'Continue',
