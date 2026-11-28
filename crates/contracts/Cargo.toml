@@ -1,0 +1,14 @@
+[package]
+name = "rust-app-contracts"
+version = "0.1.0"
+description = "Serde wire types shared by the rust-app backend and interface"
+edition = "2024"
+
+[lib]
+name = "contracts"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"

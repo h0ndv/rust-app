@@ -816,7 +816,7 @@ impl SyncOrchestrator {
     fn publish(&self, progress: u8, source: Option<Source>, errors: Vec<String>) {
         let status = SyncStatus {
             state: SyncStatusKind::Running,
-            source,
+            source: source.map(contracts::Source::from),
             progress: progress.min(100),
             requests: self.deps.limiter.count(),
             errors,

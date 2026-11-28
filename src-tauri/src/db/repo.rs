@@ -9,6 +9,8 @@ use crate::db::models::{
 };
 use crate::error::AppError;
 
+pub use contracts::{CourseGroupDto, CourseSectionDto};
+
 const UPSERT_COURSE: &str = "INSERT INTO courses (
         id, group_id, source, moodle_id, banner_crn, shortname, fullname,
         section, term, teacher, moodle_url, banner_url, last_synced_at
@@ -26,28 +28,6 @@ const UPSERT_COURSE: &str = "INSERT INTO courses (
         moodle_url = excluded.moodle_url,
         banner_url = excluded.banner_url,
         last_synced_at = COALESCE(excluded.last_synced_at, courses.last_synced_at)";
-
-#[derive(Debug, Clone, Serialize)]
-pub struct CourseSectionDto {
-    pub id: String,
-    pub fullname: String,
-    pub shortname: Option<String>,
-    pub section: Option<String>,
-    pub term: Option<String>,
-    pub teacher: Option<String>,
-    pub source: String,
-    pub banner_crn: Option<String>,
-    pub next_due_at: Option<i64>,
-    pub pending_tasks: i64,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct CourseGroupDto {
-    pub id: String,
-    pub code: String,
-    pub name: String,
-    pub sections: Vec<CourseSectionDto>,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CourseDetailDto {

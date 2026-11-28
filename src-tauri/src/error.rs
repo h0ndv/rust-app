@@ -1,3 +1,4 @@
+use contracts::ErrorKind;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use thiserror::Error;
 
@@ -20,15 +21,15 @@ pub enum AppError {
 }
 
 impl AppError {
-    fn kind(&self) -> &'static str {
+    fn kind(&self) -> ErrorKind {
         match self {
-            AppError::Network(_) => "network",
-            AppError::Unauthorized => "unauthorized",
-            AppError::Forbidden => "forbidden",
-            AppError::Parse(_) => "parse",
-            AppError::NotFound => "not_found",
-            AppError::RateLimited => "rate_limited",
-            AppError::Internal(_) => "internal",
+            AppError::Network(_) => ErrorKind::Network,
+            AppError::Unauthorized => ErrorKind::Unauthorized,
+            AppError::Forbidden => ErrorKind::Forbidden,
+            AppError::Parse(_) => ErrorKind::Parse,
+            AppError::NotFound => ErrorKind::NotFound,
+            AppError::RateLimited => ErrorKind::RateLimited,
+            AppError::Internal(_) => ErrorKind::Internal,
         }
     }
 }
@@ -36,7 +37,7 @@ impl AppError {
 impl Serialize for AppError {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_struct("AppError", 2)?;
-        state.serialize_field("kind", self.kind())?;
+        state.serialize_field("kind", &self.kind())?;
         state.serialize_field("message", &self.to_string())?;
         state.end()
     }

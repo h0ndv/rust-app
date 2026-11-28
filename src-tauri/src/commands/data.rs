@@ -1,4 +1,5 @@
 use chrono::{Datelike, Duration, Local, Utc};
+use contracts::{ActivityRow, CourseDetailDto, FileRow};
 use sqlx::FromRow;
 use tauri::State;
 
@@ -305,10 +306,7 @@ pub async fn list_courses(state: State<'_, AppState>) -> Cmd<Vec<CourseGroupDto>
 }
 
 #[tauri::command]
-pub async fn get_course(
-    state: State<'_, AppState>,
-    group_id: String,
-) -> Cmd<crate::db::repo::CourseDetailDto> {
+pub async fn get_course(state: State<'_, AppState>, group_id: String) -> Cmd<CourseDetailDto> {
     let mut detail = state.repo.get_course_detail(&group_id).await?;
 
     for task in &mut detail.tasks {
@@ -321,7 +319,63 @@ pub async fn get_course(
         block.title = normalize_schedule_title(&block.title);
     }
 
-    Ok(detail)
+    Ok(to_contract(detail))
+}
+
+pub fn to_contract(detail: crate::db::repo::CourseDetailDto) -> CourseDetailDto {
+    CourseDetailDto {
+        group: detail.group,
+        tasks: detail
+            .tasks
+            .into_iter()
+            .map(|row| ActivityRow {
+                id: row.id,
+                name: row.name,
+                modtype: row.modtype,
+                status: row.status,
+                due_at: row.due_at,
+                url: row.url,
+                acknowledged_at: row.acknowledged_at,
+            })
+            .collect(),
+        resources: detail
+            .resources
+            .into_iter()
+            .map(|row| FileRow {
+                id: row.id,
+                name: row.name,
+                url: row.url,
+                mimetype: row.mimetype,
+                size: row.size,
+                local_path: row.local_path,
+            })
+            .collect(),
+        grades: detail
+            .grades
+            .into_iter()
+            .map(|row| contracts::GradeRow {
+                id: row.id,
+                name: row.name,
+                grade: row.grade,
+                max_grade: row.max_grade,
+                source: row.source,
+            })
+            .collect(),
+        schedule: detail
+            .schedule
+            .into_iter()
+            .map(|row| contracts::ScheduleRow {
+                id: row.id,
+                title: row.title,
+                day_of_week: row.day_of_week,
+                start_time: row.start_time,
+                end_time: row.end_time,
+                room: row.room,
+                building: row.building,
+                instructor: row.instructor,
+            })
+            .collect(),
+    }
 }
 
 #[tauri::command]
@@ -647,6 +701,122 @@ mod tests {
             normalize_schedule_title("Minería de Datos"),
             "Minería de Datos"
         );
+    }
+
+    fn sample_detail() -> crate::db::repo::CourseDetailDto {
+        use crate::db::models::{Activity, FileItem, GradeItem, ScheduleEvent};
+
+        crate::db::repo::CourseDetailDto {
+            group: CourseGroupDto {
+                id: "group-1".into(),
+                code: "MAT101".into(),
+                name: "Calculo I".into(),
+                sections: Vec::new(),
+            },
+            tasks: vec![Activity {
+                id: "task-1".into(),
+                course_id: "course-1".into(),
+                section_id: Some("section-1".into()),
+                cmid: Some(42),
+                name: "Lab 1".into(),
+                modtype: "assign".into(),
+                url: Some("https://moodle.test/mod/assign/view.php?id=42".into()),
+                due_at: Some(1_760_000_000),
+                open_at: None,
+                cutoff_at: None,
+                status: Some("overdue".into()),
+                submitted: Some(false),
+                graded: Some(false),
+                grade: None,
+                max_grade: Some(100.0),
+                description: "Report attached".into(),
+                content_hash: Some("hash".into()),
+                first_seen_at: Some("2026-11-01T10:00:00Z".into()),
+                acknowledged_at: Some("2026-11-20T10:00:00Z".into()),
+                archived_at: None,
+                last_seen_at: Some("2026-11-24T10:00:00Z".into()),
+            }],
+            resources: vec![FileItem {
+                id: "file-1".into(),
+                activity_id: Some("task-1".into()),
+                course_id: Some("course-1".into()),
+                name: "guia.pdf".into(),
+                url: "https://moodle.test/pluginfile.php/1/guia.pdf".into(),
+                mimetype: Some("application/pdf".into()),
+                size: Some(2048),
+                kind: "file".into(),
+                sha256: Some("abc".into()),
+                local_path: Some("C:\\Users\\test\\Downloads\\guia.pdf".into()),
+                first_seen_at: Some("2026-11-01T10:00:00Z".into()),
+                acknowledged_at: None,
+                archived_at: None,
+                last_seen_at: Some("2026-11-24T10:00:00Z".into()),
+            }],
+            grades: vec![GradeItem {
+                id: "grade-1".into(),
+                course_id: "course-1".into(),
+                term: "202620".into(),
+                name: "Certamen 1".into(),
+                category: Some("Pruebas".into()),
+                grade: Some(5.5),
+                max_grade: Some(7.0),
+                weight: Some(30.0),
+                contribution: Some(1.65),
+                source: "banner".into(),
+                raw_json: Some("{}".into()),
+            }],
+            schedule: vec![ScheduleEvent {
+                id: "slot-1".into(),
+                course_id: Some("course-1".into()),
+                title: "Clase".into(),
+                day_of_week: Some(2),
+                start_time: Some("08:30".into()),
+                end_time: Some("10:00".into()),
+                room: Some("A-201".into()),
+                building: Some("Edificio A".into()),
+                instructor: Some("Ana Perez".into()),
+                term: Some("202620".into()),
+                raw_json: Some("{}".into()),
+            }],
+        }
+    }
+
+    #[test]
+    fn get_course_payload_matches_the_contract() {
+        let contract = to_contract(sample_detail());
+
+        let json = serde_json::to_string(&contract).unwrap();
+        let parsed: CourseDetailDto = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed, contract);
+        assert_eq!(parsed.group.name, "Calculo I");
+        assert_eq!(parsed.tasks.len(), 1);
+        assert_eq!(parsed.resources.len(), 1);
+        assert_eq!(parsed.grades.len(), 1);
+        assert_eq!(parsed.schedule.len(), 1);
+        assert_eq!(parsed.tasks[0].status.as_deref(), Some("overdue"));
+        assert_eq!(
+            parsed.tasks[0].acknowledged_at.as_deref(),
+            Some("2026-11-20T10:00:00Z")
+        );
+        assert_eq!(
+            parsed.resources[0].local_path.as_deref(),
+            Some("C:\\Users\\test\\Downloads\\guia.pdf")
+        );
+        assert_eq!(parsed.grades[0].grade, Some(5.5));
+        assert_eq!(parsed.schedule[0].day_of_week, Some(2));
+
+        for hidden in [
+            "course_id",
+            "section_id",
+            "submitted",
+            "description",
+            "sha256",
+            "raw_json",
+            "term",
+        ] {
+            assert!(!json.contains(hidden), "{hidden} leaked into {json}");
+        }
     }
 
     fn class(day: i64, start: &str) -> ScheduleEventDto {

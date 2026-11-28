@@ -7,16 +7,16 @@ fn url(value: &str) -> url::Url {
 #[test]
 fn one_failed_source_leaves_session_partial() {
     let mut state = SessionState::Disconnected;
-    state = state.connecting(Source::Moodle);
-    state = state.source_ok(Source::Moodle);
-    state = state.source_failed(Source::Banner);
+    state = state.connecting(Source::Moodle.into());
+    state = state.source_ok(Source::Moodle.into());
+    state = state.source_failed(Source::Banner.into());
     assert_eq!(state, SessionState::Partial);
 }
 
 #[test]
 fn healthy_source_does_not_recover_partial_session() {
     assert_eq!(
-        SessionState::Partial.source_ok(Source::Banner),
+        SessionState::Partial.source_ok(Source::Banner.into()),
         SessionState::Partial
     );
 }
@@ -32,7 +32,7 @@ fn final_state_depends_on_failed_sources() {
 fn all_sources_healthy_end_connected() {
     let mut state = SessionState::Disconnected;
     for source in Source::ALL {
-        state = state.connecting(source).source_ok(source);
+        state = state.connecting(source.into()).source_ok(source.into());
     }
     assert_eq!(state, SessionState::Connected);
 }
@@ -46,8 +46,18 @@ fn connection_order_is_ellucian_moodle_banner() {
 }
 
 #[test]
+fn wire_source_mirrors_every_auth_source() {
+    for source in Source::ALL {
+        assert_eq!(
+            serde_json::to_value(contracts::Source::from(source)).unwrap(),
+            source.as_str()
+        );
+    }
+}
+
+#[test]
 fn session_serializes_for_the_interface() {
-    let json = serde_json::to_value(SessionState::Connecting(Source::Moodle)).unwrap();
+    let json = serde_json::to_value(SessionState::Connecting(Source::Moodle.into())).unwrap();
     assert_eq!(json["state"], "connecting");
     assert_eq!(json["source"], "moodle");
 

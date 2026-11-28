@@ -1,0 +1,79 @@
+[package]
+name = "rust-app-ui"
+version = "0.1.0"
+description = "Dioxus interface for rust-app"
+edition = "2024"
+
+[lib]
+name = "rust_app_ui"
+
+[[bin]]
+name = "rust-app-ui"
+path = "src/main.rs"
+
+[dependencies]
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["unstable-locales"] }
+contracts = { package = "rust-app-contracts", path = "crates/contracts" }
+dioxus = { version = "0.7.10", features = ["router"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
+js-sys = "0.3"
+rust-i18n = "4"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+serde_json = "1"
+thiserror = "2"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+    "CssStyleDeclaration",
+    "Document",
+    "DomTokenList",
+    "Element",
+    "EventTarget",
+    "HtmlElement",
+    "MediaQueryList",
+    "MediaQueryListEvent",
+    "ScrollIntoViewOptions",
+    "ScrollLogicalPosition",
+    "Window",
+] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3.80"
+
+# Native test helpers and the WebDriver client never build for wasm.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+dioxus-html = { version = "0.7.10", features = ["serialize"] }
+dioxus-ssr = "0.7.10"
+serde_yaml = "0.9"
+thirtyfour = { version = "0.38", default-features = false, features = ["reqwest"] }
+tokio = { version = "1", features = ["macros", "rt", "time"] }
+
+[features]
+web = ["dioxus/web"]
+
+[[test]]
+name = "e2e"
+path = "tests/e2e/smoke.rs"
+
+[workspace]
+members = ["crates/contracts", "src-tauri"]
+
+# Incremental state gets poisoned when tauri dev and cargo test share the target dir.
+[profile.dev]
+incremental = false
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+
+# `strip = true` removes the wasm custom sections wasm-bindgen reads, so the web
+# profile overrides it. dx uses this profile for wasm release builds.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+strip = false

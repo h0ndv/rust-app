@@ -15,6 +15,8 @@ use crate::error::AppError;
 use crate::events::EventEmitter;
 use crate::http::HttpClient;
 
+pub use contracts::SessionState;
+
 pub const USER_AGENT: &str = concat!(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ",
     "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 rust-app/0.1"
@@ -95,42 +97,12 @@ impl std::fmt::Display for Source {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "state", content = "source", rename_all = "lowercase")]
-pub enum SessionState {
-    Disconnected,
-    Connecting(Source),
-    Connected,
-    Expired(Source),
-    Partial,
-}
-
-impl SessionState {
-    pub fn connecting(self, source: Source) -> Self {
-        SessionState::Connecting(source)
-    }
-
-    /// A healthy source moves the session to `Connected`, unless there is already a
-    /// failure: a partial source does not recover because another one answers.
-    pub fn source_ok(self, _source: Source) -> Self {
-        match self {
-            SessionState::Partial => SessionState::Partial,
-            _ => SessionState::Connected,
-        }
-    }
-
-    pub fn source_failed(self, _source: Source) -> Self {
-        SessionState::Partial
-    }
-
-    /// Final state of a full connection: `Connected` only if no
-    /// source failed. The transitions do not work for this because
-    /// `Connecting(next)` does not remember a previous failure.
-    pub fn outcome(failed_sources: usize) -> Self {
-        if failed_sources == 0 {
-            SessionState::Connected
-        } else {
-            SessionState::Partial
+impl From<Source> for contracts::Source {
+    fn from(source: Source) -> Self {
+        match source {
+            Source::Moodle => contracts::Source::Moodle,
+            Source::Ellucian => contracts::Source::Ellucian,
+            Source::Banner => contracts::Source::Banner,
         }
     }
 }
@@ -199,7 +171,7 @@ impl SessionManager {
         if self.health(source).await? {
             let next = {
                 let current = self.state.lock().await;
-                current.clone().source_ok(source)
+                current.clone().source_ok(source.into())
             };
             self.set_state(next).await;
             return Ok(());
@@ -212,7 +184,7 @@ impl SessionManager {
 
         let next = {
             let current = self.state.lock().await;
-            current.clone().source_ok(source)
+            current.clone().source_ok(source.into())
         };
         self.set_state(next).await;
         Ok(())
@@ -234,7 +206,8 @@ impl SessionManager {
             return Ok(());
         }
 
-        self.set_state(SessionState::Connecting(source)).await;
+        self.set_state(SessionState::Connecting(source.into()))
+            .await;
 
         let window = windows::open_auth_window(&self.app, source).await?;
 
@@ -294,7 +267,7 @@ impl SessionManager {
         } else {
             match previous {
                 SessionState::Connected | SessionState::Partial | SessionState::Connecting(_) => {
-                    SessionState::Expired(down[0])
+                    SessionState::Expired(down[0].into())
                 }
                 _ => SessionState::Disconnected,
             }
