@@ -1,0 +1,17 @@
+[application]
+name = "rust-app"
+default_platform = "web"
+out_dir = "dist"
+asset_dir = "assets"
+
+[web.app]
+title = "rust-app"
+
+[web.watcher]
+watch_path = ["src", "assets"]
+
+[web.resource]
+style = []
+
+[web.resource.dev]
+script = []

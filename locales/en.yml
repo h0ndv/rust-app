@@ -1,0 +1,415 @@
+_version: 2
+'common.loading':
+  en: 'Loading…'
+'common.noDate':
+  en: 'No date'
+'common.notPublished':
+  en: 'Not published'
+'common.open':
+  en: 'Open'
+'common.openCourse':
+  en: 'Open course'
+'common.save':
+  en: 'Save'
+'common.retry':
+  en: 'Retry'
+'common.continue':
+  en: 'Continue'
+'common.cancel':
+  en: 'Cancel'
+'common.new':
+  en: 'New'
+'common.markRead':
+  en: 'Mark as read'
+'nav.home':
+  en: 'Home'
+'nav.courses':
+  en: 'Courses'
+'nav.tasks':
+  en: 'Tasks'
+'nav.resources':
+  en: 'Resources'
+'nav.grades':
+  en: 'Grades'
+'nav.schedule':
+  en: 'Schedule'
+'nav.news':
+  en: 'News'
+'nav.search':
+  en: 'Search'
+'nav.settings':
+  en: 'Settings'
+'shell.navigation':
+  en: 'Navigation'
+'shell.expand':
+  en: 'Expand sidebar'
+'shell.collapse':
+  en: 'Collapse sidebar'
+'shell.account':
+  en: 'Account'
+'shell.sync':
+  en: 'Sync'
+'shell.syncing':
+  en: 'Syncing'
+'shell.notSynced':
+  en: 'Not synced yet'
+'shell.lastUpdate':
+  en: 'Last update: %{time}'
+'shell.syncStatus.ok':
+  en: 'Up to date'
+'shell.syncStatus.partial':
+  en: 'Partial sync'
+'shell.syncStatus.failed':
+  en: 'Sync failed'
+'shell.syncStatus.running':
+  en: 'Syncing'
+'session.disconnectedTitle':
+  en: 'No session'
+'session.disconnectedBody':
+  en: 'You can see the data saved on this computer. Connect to refresh it.'
+'session.expiredTitle':
+  en: 'Session expired'
+'session.expiredBody':
+  en: '%{source} needs a new session. Reconnect to refresh the data.'
+'session.partialTitle':
+  en: 'Partial session'
+'session.partialBody':
+  en: 'One source is not responding. Reconnect to refresh it.'
+'session.connectingTitle':
+  en: 'Connecting'
+'session.connectingBody':
+  en: 'Complete the login in the window that opened.'
+'session.connect':
+  en: 'Connect'
+'session.reconnect':
+  en: 'Reconnect'
+'onboarding.tagline':
+  en: 'Your courses, tasks, schedule and grades in one place.'
+'onboarding.beforeStart':
+  en: 'Before you start'
+'onboarding.privacy':
+  en: 'Everything is stored on this computer. There is no central server and no telemetry.'
+'onboarding.readOnly':
+  en: 'The app only reads Moodle, Ellucian and Banner. It never submits, uploads or changes anything.'
+'onboarding.password':
+  en: 'Your password and MFA are entered in the Microsoft window, never in the app.'
+'onboarding.connect':
+  en: 'Connect with Microsoft'
+'onboarding.connectingTitle':
+  en: 'Connecting to Microsoft'
+'onboarding.connectedTitle':
+  en: 'All set'
+'onboarding.partialTitle':
+  en: 'Partly connected'
+'onboarding.connectingBody':
+  en: 'Complete your account in the window that opened.'
+'onboarding.connectedBody':
+  en: 'All three sources responded.'
+'onboarding.partialBody':
+  en: 'One source did not respond. You can continue with the others.'
+'onboarding.stalledTitle':
+  en: '%{source} is not responding'
+'onboarding.stalledBody':
+  en: 'It may be the network or the login window. Retry just that step.'
+'onboarding.failedTitle':
+  en: '%{source} could not connect'
+'onboarding.failedBody':
+  en: 'Check the login window or retry the step.'
+'onboarding.unexpectedError':
+  en: 'Unexpected error'
+'onboarding.language':
+  en: 'Language'
+'onboarding.steps.aria':
+  en: 'Connection steps'
+'onboarding.steps.pending':
+  en: 'Waiting'
+'onboarding.steps.active':
+  en: 'Connecting'
+'onboarding.steps.done':
+  en: 'Done'
+'onboarding.steps.failed':
+  en: 'Failed'
+'onboarding.steps.stalled':
+  en: 'No response'
+'home.title':
+  en: 'Home'
+'home.subtitle':
+  en: 'What you have pending and what is coming.'
+'home.empty':
+  en: 'No data yet. Sync to bring your courses and tasks.'
+'home.overdue':
+  en: 'Overdue'
+'home.dueSoon':
+  en: 'Next 7 days'
+'home.nextClasses':
+  en: 'Next classes'
+'home.newResources':
+  en: 'New resources'
+'home.allTasks':
+  en: 'View all tasks'
+'courses.title':
+  en: 'Courses'
+'courses.subtitle':
+  en: 'Every section, with or without a virtual classroom.'
+'courses.empty':
+  en: 'No courses synced yet.'
+'courses.section':
+  en: 'Section'
+'courses.pending':
+  en: '%{count} pending tasks'
+'courses.pending.one':
+  en: '%{count} pending task'
+'courses.pending.other':
+  en: '%{count} pending tasks'
+'courses.viewDetail':
+  en: 'View details'
+'courseDetail.fallback':
+  en: 'Course'
+'courseDetail.back':
+  en: 'Back'
+'courseDetail.sections':
+  en: 'Sections'
+'courseDetail.noSection':
+  en: 'No section'
+'courseDetail.noTeacher':
+  en: 'No teacher'
+'courseDetail.tasks':
+  en: 'Tasks'
+'courseDetail.noTasks':
+  en: 'No tasks recorded.'
+'courseDetail.resources':
+  en: 'Resources'
+'courseDetail.noResources':
+  en: 'No resources downloaded.'
+'courseDetail.grades':
+  en: 'Grades'
+'courseDetail.noGrades':
+  en: 'No grades published.'
+'courseDetail.schedule':
+  en: 'Schedule'
+'courseDetail.noSchedule':
+  en: 'No schedule blocks.'
+'courseDetail.noRoom':
+  en: 'No room'
+'tasks.title':
+  en: 'Tasks'
+'tasks.subtitle':
+  en: 'What is due, what you submitted and what is graded.'
+'tasks.empty':
+  en: 'No tasks match this filter.'
+'tasks.filters.all':
+  en: 'All'
+'tasks.filters.overdue':
+  en: 'Overdue'
+'tasks.filters.pending':
+  en: 'Pending'
+'tasks.filters.submitted':
+  en: 'Submitted'
+'tasks.filters.graded':
+  en: 'Graded'
+'tasks.filters.no_data':
+  en: 'No date'
+'tasks.filters.unconfirmed':
+  en: 'To confirm'
+'tasks.filters.informational':
+  en: 'Informational'
+'tasks.groups.overdue':
+  en: 'Overdue'
+'tasks.groups.pending':
+  en: 'Pending'
+'tasks.groups.submitted':
+  en: 'Submitted'
+'tasks.groups.graded':
+  en: 'Graded'
+'tasks.groups.no_data':
+  en: 'No date'
+'tasks.groups.unconfirmed':
+  en: 'To confirm'
+'tasks.groups.informational':
+  en: 'Informational'
+'resources.title':
+  en: 'Resources'
+'resources.subtitle':
+  en: 'Moodle attachments, grouped by course.'
+'resources.empty':
+  en: 'No resources synced yet.'
+'resources.noCourse':
+  en: 'No course'
+'resources.downloaded':
+  en: 'Downloaded'
+'resources.download':
+  en: 'Download'
+'resources.downloading':
+  en: 'Downloading…'
+'resources.downloadFailed':
+  en: 'The file could not be downloaded.'
+'grades.title':
+  en: 'Grades'
+'grades.subtitle':
+  en: 'Banner and Moodle are shown separately, never averaged together.'
+'grades.official':
+  en: 'Official grade'
+'grades.moodleTotal':
+  en: 'Moodle total'
+'grades.notPublishedYet':
+  en: 'Not published yet.'
+'grades.course':
+  en: 'Course'
+'grades.grade':
+  en: 'Grade'
+'grades.total':
+  en: 'Total'
+'grades.termGpa':
+  en: 'Term GPA: %{value}'
+'schedule.title':
+  en: 'Schedule'
+'schedule.subtitle':
+  en: 'The week as Ellucian delivers it.'
+'schedule.empty':
+  en: 'No schedule synced yet.'
+'schedule.noClasses':
+  en: 'No classes'
+'schedule.noRoom':
+  en: 'No room'
+'schedule.classFallback':
+  en: 'Class'
+'news.title':
+  en: 'News'
+'news.subtitle':
+  en: 'Forum announcements and resources you have not opened.'
+'news.empty':
+  en: 'No news. No course published new announcements or left resources unopened.'
+'notifications.title':
+  en: 'Pending work'
+'notifications.overdue':
+  en: '%{count} overdue task'
+'notifications.overdue.one':
+  en: '%{count} overdue task'
+'notifications.overdue.other':
+  en: '%{count} overdue tasks'
+'notifications.dueSoon':
+  en: '%{count} due soon'
+'notifications.dueSoon.one':
+  en: '%{count} task due soon'
+'notifications.dueSoon.other':
+  en: '%{count} tasks due soon'
+'search.title':
+  en: 'Search'
+'search.subtitle':
+  en: 'Courses, tasks, resources and announcements.'
+'search.placeholder':
+  en: 'Search…'
+'search.button':
+  en: 'Search'
+'search.emptyQuery':
+  en: 'Type something to search local data.'
+'search.noResults':
+  en: 'No results for “%{query}”.'
+'settings.title':
+  en: 'Settings'
+'settings.subtitle':
+  en: 'Everything is stored on this computer.'
+'settings.language':
+  en: 'Language'
+'settings.syncInterval':
+  en: 'Sync interval (minutes)'
+'settings.downloadsDir':
+  en: 'Downloads folder'
+'settings.theme':
+  en: 'Theme'
+'settings.themes.system':
+  en: 'System'
+'settings.themes.light':
+  en: 'Light'
+'settings.themes.dark':
+  en: 'Dark'
+'settings.notifications':
+  en: 'Notify me about due dates'
+'settings.notificationsDenied':
+  en: 'Notifications are blocked by the system.'
+'settings.save':
+  en: 'Save'
+'settings.saved':
+  en: 'Settings saved.'
+'settings.saveFailed':
+  en: 'Could not save settings.'
+'settings.exportTitle':
+  en: 'Export'
+'settings.exportBody':
+  en: 'Saves a JSON copy of the data stored on this computer. It is not a restorable backup.'
+'settings.exportButton':
+  en: 'Export data'
+'settings.exported':
+  en: 'Export saved to %{path}'
+'settings.exportFailed':
+  en: 'Could not export the data.'
+'settings.clearTitle':
+  en: 'Local data'
+'settings.clearBody':
+  en: 'Deletes courses, tasks, resources and grades from this computer. The session profile is not touched.'
+'settings.clearButton':
+  en: 'Delete data'
+'settings.clearConfirm':
+  en: 'Local data will be deleted. Continue?'
+'settings.cleared':
+  en: '%{count} rows deleted.'
+'settings.cleared.one':
+  en: '%{count} row deleted.'
+'settings.cleared.other':
+  en: '%{count} rows deleted.'
+'settings.clearFailed':
+  en: 'Could not delete local data.'
+'settings.clearDownloadsButton':
+  en: 'Clear downloaded files'
+'settings.clearDownloadsConfirm':
+  en: 'Downloaded files will be deleted from disk. The local catalogue stays. Continue?'
+'settings.downloadsCleared.one':
+  en: '%{count} file deleted.'
+'settings.downloadsCleared.other':
+  en: '%{count} files deleted.'
+'settings.clearDownloadsFailed':
+  en: 'Could not clear the downloaded files.'
+'status.overdue':
+  en: 'Overdue'
+'status.pending':
+  en: 'Pending'
+'status.submitted':
+  en: 'Submitted'
+'status.graded':
+  en: 'Graded'
+'status.no_data':
+  en: 'No date'
+'status.unconfirmed':
+  en: 'To confirm'
+'status.informational':
+  en: 'Informational'
+'kinds.announcement':
+  en: 'Announcement'
+'kinds.resource':
+  en: 'Resource'
+'kinds.file':
+  en: 'File'
+'kinds.activity':
+  en: 'Activity'
+'kinds.other':
+  en: 'Other'
+'recovery.title':
+  en: 'Local data was reset'
+'recovery.body':
+  en: 'The database could not be opened. The old file was moved to %{path}. Previously downloaded files remain in the downloads folder.'
+'recovery.dismiss':
+  en: 'Dismiss'
+'errors.network':
+  en: 'Network error. Check your connection and try again.'
+'errors.unauthorized':
+  en: 'Your session expired. Connect again.'
+'errors.forbidden':
+  en: "This link points outside the app's trusted sites."
+'errors.parse':
+  en: 'The source returned an unexpected response.'
+'errors.not_found':
+  en: 'Not found.'
+'errors.rate_limited':
+  en: 'The request limit for this run was reached.'
+'errors.internal':
+  en: 'Something went wrong.'

@@ -182,7 +182,7 @@ The WebView2 profile holds the session, so the capture runs against the app itse
 
 ```powershell
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9333 --remote-allow-origins=*"
-bun run tauri dev
+cargo tauri dev
 ```
 
 Then, from Python:

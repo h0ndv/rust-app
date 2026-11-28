@@ -1,0 +1,11 @@
+pub mod course_detail;
+pub mod courses;
+pub mod grades;
+pub mod home;
+pub mod news;
+pub mod onboarding;
+pub mod resources;
+pub mod schedule;
+pub mod search;
+pub mod settings;
+pub mod tasks;

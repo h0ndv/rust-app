@@ -2,13 +2,17 @@ pub mod auth;
 pub mod data;
 pub mod data_safety;
 pub mod dto;
+pub mod notifications;
 pub mod sync;
+pub mod window;
 
 pub use auth::*;
 pub use data::*;
 pub use data_safety::*;
 pub use dto::*;
+pub use notifications::*;
 pub use sync::*;
+pub use window::*;
 
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 

@@ -1,0 +1,415 @@
+_version: 2
+'common.loading':
+  es: 'Cargando…'
+'common.noDate':
+  es: 'Sin fecha'
+'common.notPublished':
+  es: 'Sin publicar'
+'common.open':
+  es: 'Abrir'
+'common.openCourse':
+  es: 'Abrir curso'
+'common.save':
+  es: 'Guardar'
+'common.retry':
+  es: 'Reintentar'
+'common.continue':
+  es: 'Continuar'
+'common.cancel':
+  es: 'Cancelar'
+'common.new':
+  es: 'Nuevo'
+'common.markRead':
+  es: 'Marcar como leído'
+'nav.home':
+  es: 'Inicio'
+'nav.courses':
+  es: 'Ramos'
+'nav.tasks':
+  es: 'Tareas'
+'nav.resources':
+  es: 'Recursos'
+'nav.grades':
+  es: 'Notas'
+'nav.schedule':
+  es: 'Horario'
+'nav.news':
+  es: 'Novedades'
+'nav.search':
+  es: 'Buscador'
+'nav.settings':
+  es: 'Ajustes'
+'shell.navigation':
+  es: 'Navegación'
+'shell.expand':
+  es: 'Expandir barra lateral'
+'shell.collapse':
+  es: 'Contraer barra lateral'
+'shell.account':
+  es: 'Cuenta'
+'shell.sync':
+  es: 'Sincronizar'
+'shell.syncing':
+  es: 'Sincronizando'
+'shell.notSynced':
+  es: 'Sin sincronizar'
+'shell.lastUpdate':
+  es: 'Última actualización: %{time}'
+'shell.syncStatus.ok':
+  es: 'Al día'
+'shell.syncStatus.partial':
+  es: 'Sincronización parcial'
+'shell.syncStatus.failed':
+  es: 'Falló la sincronización'
+'shell.syncStatus.running':
+  es: 'Sincronizando'
+'session.disconnectedTitle':
+  es: 'Sin sesión'
+'session.disconnectedBody':
+  es: 'Puedes ver los datos guardados en este computador. Conecta para actualizarlos.'
+'session.expiredTitle':
+  es: 'Sesión vencida'
+'session.expiredBody':
+  es: '%{source} necesita una sesión nueva. Reconecta para actualizar los datos.'
+'session.partialTitle':
+  es: 'Sesión parcial'
+'session.partialBody':
+  es: 'Una fuente no está respondiendo. Reconecta para actualizarla.'
+'session.connectingTitle':
+  es: 'Conectando'
+'session.connectingBody':
+  es: 'Completa el login en la ventana que se abrió.'
+'session.connect':
+  es: 'Conectar'
+'session.reconnect':
+  es: 'Reconectar'
+'onboarding.tagline':
+  es: 'Tus ramos, tareas, horario y notas en un solo lugar.'
+'onboarding.beforeStart':
+  es: 'Antes de empezar'
+'onboarding.privacy':
+  es: 'Todo se guarda en este computador. No hay servidor central ni telemetría.'
+'onboarding.readOnly':
+  es: 'La app solo lee Moodle, Ellucian y Banner. No entrega, sube ni modifica nada.'
+'onboarding.password':
+  es: 'Tu contraseña y el MFA se escriben en la ventana de Microsoft, nunca en la app.'
+'onboarding.connect':
+  es: 'Conectar con Microsoft'
+'onboarding.connectingTitle':
+  es: 'Conectando con Microsoft'
+'onboarding.connectedTitle':
+  es: 'Todo listo'
+'onboarding.partialTitle':
+  es: 'Conectado a medias'
+'onboarding.connectingBody':
+  es: 'Completa tu cuenta en la ventana que se abrió.'
+'onboarding.connectedBody':
+  es: 'Las tres fuentes respondieron.'
+'onboarding.partialBody':
+  es: 'Una fuente no respondió. Puedes seguir con las demás.'
+'onboarding.stalledTitle':
+  es: '%{source} no está respondiendo'
+'onboarding.stalledBody':
+  es: 'Puede ser la red o la ventana de login. Reintenta solo ese paso.'
+'onboarding.failedTitle':
+  es: '%{source} no se pudo conectar'
+'onboarding.failedBody':
+  es: 'Revisa la ventana de login o reintenta el paso.'
+'onboarding.unexpectedError':
+  es: 'Error inesperado'
+'onboarding.language':
+  es: 'Idioma'
+'onboarding.steps.aria':
+  es: 'Pasos de conexión'
+'onboarding.steps.pending':
+  es: 'En espera'
+'onboarding.steps.active':
+  es: 'Conectando'
+'onboarding.steps.done':
+  es: 'Listo'
+'onboarding.steps.failed':
+  es: 'Falló'
+'onboarding.steps.stalled':
+  es: 'Sin respuesta'
+'home.title':
+  es: 'Inicio'
+'home.subtitle':
+  es: 'Qué tienes pendiente y qué viene.'
+'home.empty':
+  es: 'Todavía no hay datos. Sincroniza para traer los ramos y las tareas.'
+'home.overdue':
+  es: 'Atrasadas'
+'home.dueSoon':
+  es: 'Próximos 7 días'
+'home.nextClasses':
+  es: 'Próximas clases'
+'home.newResources':
+  es: 'Recursos nuevos'
+'home.allTasks':
+  es: 'Ver todas las tareas'
+'courses.title':
+  es: 'Ramos'
+'courses.subtitle':
+  es: 'Todas las secciones, tengan o no aula virtual.'
+'courses.empty':
+  es: 'Todavía no hay ramos sincronizados.'
+'courses.section':
+  es: 'Sección'
+'courses.pending':
+  es: '%{count} pendientes'
+'courses.pending.one':
+  es: '%{count} pendiente'
+'courses.pending.other':
+  es: '%{count} pendientes'
+'courses.viewDetail':
+  es: 'Ver detalle'
+'courseDetail.fallback':
+  es: 'Ramo'
+'courseDetail.back':
+  es: 'Volver'
+'courseDetail.sections':
+  es: 'Secciones'
+'courseDetail.noSection':
+  es: 'Sin sección'
+'courseDetail.noTeacher':
+  es: 'Sin profesor'
+'courseDetail.tasks':
+  es: 'Tareas'
+'courseDetail.noTasks':
+  es: 'Sin tareas registradas.'
+'courseDetail.resources':
+  es: 'Recursos'
+'courseDetail.noResources':
+  es: 'Sin recursos descargados.'
+'courseDetail.grades':
+  es: 'Notas'
+'courseDetail.noGrades':
+  es: 'Sin notas publicadas.'
+'courseDetail.schedule':
+  es: 'Horario'
+'courseDetail.noSchedule':
+  es: 'Sin bloques de horario.'
+'courseDetail.noRoom':
+  es: 'Sin sala'
+'tasks.title':
+  es: 'Tareas'
+'tasks.subtitle':
+  es: 'Lo que vence, lo entregado y lo calificado.'
+'tasks.empty':
+  es: 'No hay tareas con este filtro.'
+'tasks.filters.all':
+  es: 'Todas'
+'tasks.filters.overdue':
+  es: 'Atrasadas'
+'tasks.filters.pending':
+  es: 'Pendientes'
+'tasks.filters.submitted':
+  es: 'Entregadas'
+'tasks.filters.graded':
+  es: 'Calificadas'
+'tasks.filters.no_data':
+  es: 'Sin fecha'
+'tasks.filters.unconfirmed':
+  es: 'Por confirmar'
+'tasks.filters.informational':
+  es: 'Informativas'
+'tasks.groups.overdue':
+  es: 'Atrasadas'
+'tasks.groups.pending':
+  es: 'Pendientes'
+'tasks.groups.submitted':
+  es: 'Entregadas'
+'tasks.groups.graded':
+  es: 'Calificadas'
+'tasks.groups.no_data':
+  es: 'Sin fecha'
+'tasks.groups.unconfirmed':
+  es: 'Por confirmar'
+'tasks.groups.informational':
+  es: 'Informativas'
+'resources.title':
+  es: 'Recursos'
+'resources.subtitle':
+  es: 'Adjuntos de Moodle, agrupados por ramo.'
+'resources.empty':
+  es: 'Todavía no hay recursos sincronizados.'
+'resources.noCourse':
+  es: 'Sin ramo'
+'resources.downloaded':
+  es: 'Descargado'
+'resources.download':
+  es: 'Descargar'
+'resources.downloading':
+  es: 'Descargando…'
+'resources.downloadFailed':
+  es: 'No se pudo descargar el archivo.'
+'grades.title':
+  es: 'Notas'
+'grades.subtitle':
+  es: 'Banner y Moodle se muestran por separado, sin promediarlos.'
+'grades.official':
+  es: 'Nota oficial'
+'grades.moodleTotal':
+  es: 'Total Moodle'
+'grades.notPublishedYet':
+  es: 'Sin publicar todavía.'
+'grades.course':
+  es: 'Ramo'
+'grades.grade':
+  es: 'Nota'
+'grades.total':
+  es: 'Total'
+'grades.termGpa':
+  es: 'GPA del periodo: %{value}'
+'schedule.title':
+  es: 'Horario'
+'schedule.subtitle':
+  es: 'La semana tal como la entrega Ellucian.'
+'schedule.empty':
+  es: 'Todavía no hay horario sincronizado.'
+'schedule.noClasses':
+  es: 'Sin clases'
+'schedule.noRoom':
+  es: 'Sin sala'
+'schedule.classFallback':
+  es: 'Clase'
+'news.title':
+  es: 'Novedades'
+'news.subtitle':
+  es: 'Anuncios de los foros y recursos que no has abierto.'
+'news.empty':
+  es: 'Sin novedades. Ningún curso publicó anuncios nuevos ni dejó recursos sin abrir.'
+'notifications.title':
+  es: 'Trabajo pendiente'
+'notifications.overdue':
+  es: '%{count} atrasada'
+'notifications.overdue.one':
+  es: '%{count} atrasada'
+'notifications.overdue.other':
+  es: '%{count} atrasadas'
+'notifications.dueSoon':
+  es: '%{count} por vencer'
+'notifications.dueSoon.one':
+  es: '%{count} por vencer'
+'notifications.dueSoon.other':
+  es: '%{count} por vencer'
+'search.title':
+  es: 'Buscador'
+'search.subtitle':
+  es: 'Ramos, tareas, recursos y anuncios.'
+'search.placeholder':
+  es: 'Buscar…'
+'search.button':
+  es: 'Buscar'
+'search.emptyQuery':
+  es: 'Escribe algo para buscar en los datos locales.'
+'search.noResults':
+  es: 'Sin resultados para “%{query}”.'
+'settings.title':
+  es: 'Ajustes'
+'settings.subtitle':
+  es: 'Todo se guarda en este computador.'
+'settings.language':
+  es: 'Idioma'
+'settings.syncInterval':
+  es: 'Intervalo de sincronización (minutos)'
+'settings.downloadsDir':
+  es: 'Carpeta de descargas'
+'settings.theme':
+  es: 'Tema'
+'settings.themes.system':
+  es: 'Sistema'
+'settings.themes.light':
+  es: 'Claro'
+'settings.themes.dark':
+  es: 'Oscuro'
+'settings.notifications':
+  es: 'Avisar de vencimientos'
+'settings.notificationsDenied':
+  es: 'El sistema bloqueó las notificaciones.'
+'settings.save':
+  es: 'Guardar'
+'settings.saved':
+  es: 'Ajustes guardados.'
+'settings.saveFailed':
+  es: 'No se pudieron guardar los ajustes.'
+'settings.exportTitle':
+  es: 'Exportar'
+'settings.exportBody':
+  es: 'Guarda una copia JSON de los datos de este equipo. No es un respaldo restaurable.'
+'settings.exportButton':
+  es: 'Exportar datos'
+'settings.exported':
+  es: 'Exportación guardada en %{path}'
+'settings.exportFailed':
+  es: 'No se pudieron exportar los datos.'
+'settings.clearTitle':
+  es: 'Datos locales'
+'settings.clearBody':
+  es: 'Borra ramos, tareas, recursos y notas de este computador. El perfil de sesión no se toca.'
+'settings.clearButton':
+  es: 'Borrar datos'
+'settings.clearConfirm':
+  es: 'Se borran los datos locales. ¿Continuar?'
+'settings.cleared':
+  es: '%{count} filas borradas.'
+'settings.cleared.one':
+  es: '%{count} fila borrada.'
+'settings.cleared.other':
+  es: '%{count} filas borradas.'
+'settings.clearFailed':
+  es: 'No se pudieron borrar los datos locales.'
+'settings.clearDownloadsButton':
+  es: 'Borrar archivos descargados'
+'settings.clearDownloadsConfirm':
+  es: 'Se borran los archivos descargados del disco. El catálogo local queda. ¿Continuar?'
+'settings.downloadsCleared.one':
+  es: '%{count} archivo borrado.'
+'settings.downloadsCleared.other':
+  es: '%{count} archivos borrados.'
+'settings.clearDownloadsFailed':
+  es: 'No se pudieron borrar los archivos descargados.'
+'status.overdue':
+  es: 'Atrasada'
+'status.pending':
+  es: 'Pendiente'
+'status.submitted':
+  es: 'Entregada'
+'status.graded':
+  es: 'Calificada'
+'status.no_data':
+  es: 'Sin fecha'
+'status.unconfirmed':
+  es: 'Por confirmar'
+'status.informational':
+  es: 'Informativa'
+'kinds.announcement':
+  es: 'Anuncio'
+'kinds.resource':
+  es: 'Recurso'
+'kinds.file':
+  es: 'Archivo'
+'kinds.activity':
+  es: 'Actividad'
+'kinds.other':
+  es: 'Otro'
+'recovery.title':
+  es: 'Se restablecieron los datos locales'
+'recovery.body':
+  es: 'No se pudo abrir la base de datos. El archivo anterior se movió a %{path}. Los archivos descargados antes siguen en la carpeta de descargas.'
+'recovery.dismiss':
+  es: 'Descartar'
+'errors.network':
+  es: 'Error de red. Revisa tu conexión e inténtalo de nuevo.'
+'errors.unauthorized':
+  es: 'Tu sesión venció. Vuelve a conectar.'
+'errors.forbidden':
+  es: 'Este enlace apunta fuera de los sitios de confianza.'
+'errors.parse':
+  es: 'La fuente devolvió una respuesta inesperada.'
+'errors.not_found':
+  es: 'No encontrado.'
+'errors.rate_limited':
+  es: 'Se agotó el límite de peticiones de esta corrida.'
+'errors.internal':
+  es: 'Algo salió mal.'

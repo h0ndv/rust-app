@@ -24,7 +24,7 @@ The app does not have a name yet. `rust-app` is the placeholder used by the repo
 - Courses, tasks, resources, schedule and grades without opening a browser.
 - Background sync that never blocks the interface.
 - Works offline with the last snapshot.
-- Downloads Moodle attachments and opens them with the system app.
+- Downloads Moodle attachments and opens them in the in-app WebView viewer.
 
 **Non-goals**
 
@@ -38,10 +38,12 @@ The app does not have a name yet. `rust-app` is the placeholder used by the repo
 ## 3. Layers
 
 ```text
-React UI (src/)
-   │  invoke(command, payload) / listen("sync://…")
+Dioxus UI (src/, WebAssembly)
+   │  Transport::invoke(command, payload) / listen("sync://…")
    ▼
-commands/            Tauri boundary: DTOs in, DTOs out, errors as strings
+contracts            Serialize/Deserialize DTOs shared by both sides
+   ▼
+commands/            Tauri boundary: DTOs in, DTOs out, `{kind, message}` errors
    │
    ├── sync/         orchestrator, novelty rules, archiving, download queue
    ├── db/           SQLite pool, repositories, schema, course linking
@@ -51,17 +53,22 @@ commands/            Tauri boundary: DTOs in, DTOs out, errors as strings
 ```
 
 The interface never talks to Moodle, Ellucian or Banner. It only calls commands, and
-Rust owns every decision. That keeps the three integration quirks in one language and
-keeps the UI replaceable.
+Rust owns every decision. Both sides share one set of types in `crates/contracts`, so a
+command rename breaks the build instead of the running app.
 
 ## 4. Module map
 
 | Path                      | Responsibility                                                             |
 | ------------------------- | -------------------------------------------------------------------------- |
-| `src/`                    | React screens, components and the Tauri client                             |
-| `src/i18n/`               | English/Spanish catalogs, i18next setup, locale resolution                 |
+| `crates/contracts/`       | DTOs, commands payloads and `AppError` wire types shared by both sides     |
+| `src/`                    | Dioxus app: router, context, transport, theme, formatting, i18n            |
+| `src/components/`         | Shell, sidebar, headers, toasts and the component primitives               |
+| `src/features/`           | One module per screen; renders from a DTO, holds no global state           |
+| `tests/`                  | Dioxus SSR tests for the interface                                         |
+| `locales/`                | `en.yml` and `es.yml`, loaded at compile time by `rust-i18n`               |
+| `assets/`                 | Tailwind sources, generated `app.css`, self-hosted Inter and Geist Mono    |
 | `src-tauri/src/lib.rs`    | Builder, setup, DB bootstrap, command registry                             |
-| `src-tauri/src/state.rs`  | `AppState { pool, repo, sync }`                                            |
+| `src-tauri/src/state.rs`  | `AppState { pool, repo, sync, downloads_fallback }`                        |
 | `src-tauri/src/error.rs`  | `AppError` with `kind` and a technical message                             |
 | `src-tauri/src/events.rs` | Injected event emitter type shared by auth, sync and downloads             |
 | `src-tauri/src/http/`     | `HttpClient` (timeout, 4 in flight), `RateLimiter` (6/s, 600/run)          |
@@ -212,41 +219,85 @@ A course may exist in Moodle, in Banner, or in both. The app never hides one.
 The term must match when both sides carry one. Grouping is by code, so lecture and lab
 appear under the same card with two sections.
 
-## 10. Commands and DTOs
+## 10. Interface
 
-`commands/` exposes 26 commands. Reads return DTOs from `commands/dto.rs`; the UI never
-sees database models.
+The interface is Rust: Dioxus 0.7 with client-side rendering, compiled to WebAssembly
+and embedded in the Tauri window. There is no Node toolchain; the only JavaScript is the
+wasm-bindgen glue that `dx` generates.
+
+- **Entry point.** `src/lib.rs` declares the modules and, for `wasm32`, launches `App`.
+  `src/main.rs` starts the same app for `dx serve`. `src/app.rs` builds the context,
+  runs four startup probes (`get_settings`, `has_local_data`, `session_state`,
+  `recovery_notice`) and decides between onboarding and the shell.
+- **Routing.** `src/router.rs` derives `Routable`; `AppShell` is the layout and every
+  screen is a feature module under `src/features/`. Paths mirror the Spanish UI
+  (`/ramos`, `/tareas`, `/recursos`, `/notas`, `/horario`, `/novedades`, `/buscar`,
+  `/ajustes`) and the course route carries an optional focus.
+- **State.** One `AppContext` in Dioxus context holds the `Api`, the session, the sync
+  view, the language, the toast queue and a `data_version` counter. Screens read it with
+  `use_app()`. A finished sync bumps `data_version`, and every screen refetches on the
+  change.
+- **Transport.** `src/transport.rs` defines `async_trait Transport`. The `wasm32`
+  implementation calls `__TAURI__.core.invoke` (the window is created with
+  `withGlobalTauri`), serializes args with `serde-wasm-bindgen`'s JSON-compatible mode
+  because the default emits ES maps Tauri cannot read, and decodes rejections into
+  `UiError`. Native builds use `UnsupportedTransport`; tests inject a fake.
+- **Events.** `src/events.rs` subscribes to three Tauri events (`session://changed`,
+  `sync://progress`, `sync://finished`). Each subscription returns a `Listener` that
+  keeps the JS closure alive and calls the unlisten function before releasing it, so a
+  pending `listen` can never hand Tauri a freed callback.
+- **Copy and locale.** `rust-i18n` compiles `locales/en.yml` and `locales/es.yml`.
+  `settings.language` drives the catalog, the document language and date formatting.
+  Rust sends stable English codes and serialized `AppError` objects, so rewording a
+  screen never needs a Rust change.
+- **Theme.** `src/theme.rs` applies `settings.theme` at boot and listens to
+  `prefers-color-scheme` for the `system` value; `dark` is a class on the root.
+- **Assets.** `src/app.rs` registers `asset!("/assets/app.css")` and the fonts folder;
+  `assets/app.css` is generated by the standalone Tailwind binary from
+  `assets/tailwind.css` and the class strings in `src/**/*.rs`.
+- **CSP.** `src-tauri/tauri.conf.json` keeps `'self'`, `data:` images,
+  `wasm-unsafe-eval`, inline styles and the IPC endpoints, and blocks every other
+  origin. The browser window shares the authenticated WebView2 profile, so the policy
+  is also the security boundary for source pages opened in it.
+
+## 11. Commands and DTOs
+
+`commands/` exposes 30 commands. Reads return DTOs re-exported by `commands/dto.rs` from
+`crates/contracts`; the UI never sees database models and the backend never sees
+interface types.
 
 | Group    | Commands                                                                                                                                              |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Session  | `connect(source?)`, `session_state`, `refresh_session`                                                                                                |
 | Sync     | `start_sync`, `cancel_sync`, `sync_status`                                                                                                            |
 | Reads    | `get_dashboard`, `has_local_data`, `list_courses`, `get_course`, `list_tasks`, `list_resources`, `list_grades`, `get_schedule`, `list_news`, `search` |
-| Settings | `get_settings`, `save_settings`, `set_language`                                                                                                       |
-| Actions  | `acknowledge`, `open_in_app`, `download_file`, `export_data`, `clear_downloads`, `recovery_notice`, `clear_data`                                      |
+| Settings | `get_settings`, `save_settings`, `set_language`, `set_window_theme`                                                                                   |
+| Actions  | `acknowledge`, `open_in_app`, `download_file`, `export_data`, `clear_downloads`, `recovery_notice`, `clear_data`, `notification_permission`, `request_notification_permission`, `send_notification` |
 
 Filters (`TaskFilter`, `ResourceFilter`) travel lowercase so the JSON stays
 `"overdue"`, `"new"`. `no_data` is spelled out in the enum because the lowercase rename
 would produce `nodata`.
 
 Novedades reads unread rows straight from `activities`, `files` and `announcements`;
-`acknowledge` updates the entity and the `events` novelty log in one call, and the UI
-invalidates its queries so the badge clears on every screen.
+`acknowledge` updates the entity and the `events` novelty log in one call, and the
+interface bumps `data_version` so the badge clears on every screen.
 
-The interface language lives in `settings.language` and defaults to `"en"`. UI copy lives
-in `src/i18n/locales`; Rust sends stable English codes and serialized `AppError` objects
-(`{ kind, message }`). Adding a language is a frontend-only change: a catalog and a
-`LANGUAGES` entry with its `Intl` locale; `supportedLngs` and the resource map are derived.
+The interface language lives in `settings.language` and defaults to `"en"`. Adding a
+language is a `locales/<code>.yml` file plus a `Language` variant in `src/i18n.rs`; the
+contracts and the commands stay untouched.
 
 The other settings are read where they are used: the scheduler reads
 `settings.sync_interval_minutes` every minute, the download worker reads
-`settings.downloads_dir` for each item, the frontend applies `settings.theme` at boot and
-on save, and notifications honor `settings.notifications`.
+`settings.downloads_dir` for each item, the interface applies `settings.theme` at boot
+and on save, and notifications honor `settings.notifications`.
 
-Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finished`,
-`download://finished`, `download://error`.
+Events emitted by the backend: `session://changed`, `sync://progress`,
+`sync://finished`, `download://finished`, `download://error`. The interface listens to
+all five; `download_file` only queues the job in the download worker and returns, then
+the UI waits for the matching `download://finished` or `download://error` before it
+refreshes the row or shows the failure toast.
 
-## 11. Decisions and tradeoffs
+## 12. Decisions and tradeoffs
 
 | Decision                                                                | Alternative                          | Why                                                                 | Cost if wrong                                                  |
 | ----------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -258,14 +309,17 @@ Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finish
 | `last_seen_at` column                                                   | Reuse `first_seen_at`                | 7-day archiving needs the last time an item was seen                | One migration                                                  |
 | Resources are files, not pages                                          | Fetch `mod/resource/view.php`        | The page redirects to the PDF; reading it as text hung the sync     | Attachment metadata comes from the link instead                |
 | Baseline per course                                                     | Global first run                     | A new course added mid-semester should not flood Novedades          | A newly added course never marks its first items as new        |
-| Frontend-owned i18n catalogs                                            | Rust-localized messages              | UI copy and `Intl` formatting change with the interface             | A catalog per language                                         |
+| Dioxus in Rust                                                          | React plus Vite                      | One language for the whole app, no Node toolchain, shared DTOs      | Larger wasm bundle and a smaller component ecosystem            |
+| `Transport` trait                                                       | Call `invoke` from every screen      | Tests render with a fake and stay offline                           | One indirection per command                                    |
+| `crates/contracts`                                                      | Duplicate DTOs in both crates        | A wire mismatch breaks the build instead of a screen                | One crate and one dependency edge                               |
+| `rust-i18n` catalogs                                                    | Rust-localized messages              | UI copy and date formatting change with the interface               | A catalog per language                                         |
 | CSP plus a three-host allowlist                                         | Trust every URL the adapters produce | The browser window shares the authenticated WebView2 profile        | A source link outside those hosts is blocked by design         |
 | Deep links carry the course group and an optional focus                 | Resolve ids inside the route         | Search and Novedades already join the source tables                 | A hit without a course stays unlinked                          |
 | JSON snapshot of the durable tables                                     | Dump the SQLite file                 | A portable export does not need the WAL or the FTS index            | The search index and run logs are excluded; there is no import |
 | Clear only the recorded download paths                                  | Wipe the downloads folder            | The folder is user-configurable and may be broad                    | A file not recorded in the database is left alone              |
 | Move a corrupt database aside                                           | Delete it and start over             | The old file is the only way to recover data                        | A backup file stays beside the database                        |
 
-## 12. Extension points
+## 13. Extension points
 
 **Add a data source**
 
@@ -277,11 +331,15 @@ Events emitted to the UI: `session://changed`, `sync://progress`, `sync://finish
 
 **Add a screen**
 
-1. Add the DTO in `commands/dto.rs`.
-2. Add the read command in `commands/data.rs`.
-3. Register it in `generate_handler!`.
-4. Add the route in `src/app/router.tsx` and the Coss components for it.
+1. Add the DTO in `crates/contracts/src/lib.rs`.
+2. Add the read command in `commands/data.rs` and register it in `generate_handler!`.
+3. Add the method to `src/api.rs` and the module under `src/features/`.
+4. Add the route to `src/router.rs`; the sidebar entry is one row in
+   `src/components/sidebar.rs`.
+5. Add the copy to `locales/en.yml` and `locales/es.yml`, then regenerate
+   `assets/app.css` if the screen introduces new classes.
 
 **Add a command**
 
-Keep it thin: read `AppState`, call a service, map `AppError` to `String`.
+Keep it thin: read `AppState`, call a service, return `AppError` when it fails; it
+serializes as `{kind, message}`.

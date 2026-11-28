@@ -23,7 +23,10 @@ fn main_window_is_created_by_the_app() {
 fn production_csp_locks_the_webview_down() {
     let csp = &config()["app"]["security"]["csp"];
     assert_eq!(csp["default-src"].as_str(), Some("'self'"));
-    assert_eq!(csp["script-src"].as_str(), Some("'self'"));
+    assert_eq!(
+        csp["script-src"].as_str(),
+        Some("'self' 'wasm-unsafe-eval'")
+    );
     assert_eq!(csp["style-src"].as_str(), Some("'self' 'unsafe-inline'"));
     assert_eq!(csp["img-src"].as_str(), Some("'self' data:"));
     assert_eq!(csp["font-src"].as_str(), Some("'self'"));
